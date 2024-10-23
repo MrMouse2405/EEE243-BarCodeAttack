@@ -80,19 +80,140 @@ typedef uint64_t MilliSeconds;
     while (buzzer.isPlaying()) \
         ;
 
+typedef enum States
+{
+    START,
+    NOT_DETECTED,
+    DETECTED,
+    ERROR,
+} State;
+
+template <size_t capacity>
+class StateMachine
+{
+
+    State state = START;
+    MilliSeconds t0;
+
+    int barcodeResults[capacity];
+    size_t len = 0;
+
+    void append(int value)
+    {
+        if (len > capacity)
+            this->state = ERROR;
+
+        barcodeResults[len] = value;
+        len++;
+    }
+
+    void startTracking()
+    {
+        this->t0 = millis();
+    }
+
+    void track()
+    {
+        this->append(millis() - this->t0);
+        this->t0 = millis();
+    }
+
+public:
+    StateMachine()
+    {
+    }
+
+    State getState()
+    {
+        return state;
+    }
+
+    int *getResults()
+    {
+        return barcodeResults;
+    }
+
+    size_t getResultLen()
+    {
+        return len;
+    }
+
+    void push(State newState)
+    {
+
+        // only if state has changed.
+        if (newState == this->state)
+        {
+            return;
+        }
+
+        switch (this->state)
+        {
+        case START:
+            if (newState == NOT_DETECTED)
+                return;
+            this->startTracking();
+            this->state = DETECTED;
+            break;
+        case NOT_DETECTED:
+            this->track();
+            this->state = DETECTED;
+            break;
+        case DETECTED:
+            this->track();
+            state = NOT_DETECTED;
+            break;
+        case ERROR:
+            break;
+        }
+    }
+};
+
+typedef struct
+{
+    uint16_t LineSensorDetectionResult;
+    bool IsBarcodeSensorDetected;
+
+} SensorResults;
+
 /*
- * Displays a string centered along the y-axis of the display.
+ * Simulates std::Optional
  *
- * string: the string to be displayed
- * line: which number line to be displayed on. (0 <= line < 8)
+ *  std::optional is a utility in C++17 that represents an object
+ *  that may or may not contain a value.
+ *
+ *  It allows for more expressive code by indicating the presence
+ *  or absence of a value without using pointers or special values.
+ *
+ *  Ideal for handling optional parameters or return values safely.
  */
 
-void display_centered(const String &s, const uint8_t line)
+template <typename T>
+class Option
 {
-    // 10 is half of 21 (see function setup)
-    display.gotoXY(10 - (s.length() / 2), line);
-    display.print(s.c_str());
-}
+    bool result;
+    T value;
+
+public:
+    // constructor with a valid value
+    explicit Option(const T value)
+    {
+        this->result = true;
+        this->value = value;
+    }
+
+    // empty value constructor
+    explicit Option()
+    {
+        this->result = false;
+    }
+
+    // returns true if the value is absent
+    bool is_absent() const { return !(this->result); }
+
+    // return the values
+    T get_value() const { return this->value; }
+};
 
 /*
  * Calibrates the sensors by reading values as the robot turns,
@@ -139,43 +260,18 @@ void calibrateSensors()
 }
 
 /*
- * Simulates std::Optional
+ * Displays a string centered along the y-axis of the display.
  *
- *  std::optional is a utility in C++17 that represents an object
- *  that may or may not contain a value.
- *
- *  It allows for more expressive code by indicating the presence
- *  or absence of a value without using pointers or special values.
- *
- *  Ideal for handling optional parameters or return values safely.
+ * string: the string to be displayed
+ * line: which number line to be displayed on. (0 <= line < 8)
  */
 
-template <typename T>
-class Option
+void display_centered(const String &s, const uint8_t line)
 {
-    bool result;
-    T value;
-
-public:
-    // constructor with a valid value
-    explicit Option(const T value)
-    {
-        this->result = true;
-        this->value = value;
-    }
-
-    // empty value constructor
-    explicit Option()
-    {
-        this->result = false;
-    }
-
-    // returns true if the value is absent
-    bool is_absent() const { return !(this->result); }
-
-    // return the values
-    T get_value() const { return this->value; }
-};
+    // 10 is half of 21 (see function setup)
+    display.gotoXY(10 - (s.length() / 2), line);
+    display.print(s.c_str());
+}
 
 bool isBarcodeDetected(uint16_t lineSensorValues[NUM_SENSORS])
 {
@@ -195,13 +291,6 @@ bool isBarcodeDetected(uint16_t lineSensorValues[NUM_SENSORS])
  * If robot's sensors do not detect the line:
  *   Option<int16_t> will be empty.
  */
-
-typedef struct
-{
-    uint16_t LineSensorDetectionResult;
-    bool IsBarcodeSensorDetected;
-
-} SensorResults;
 
 Option<SensorResults> detectLines()
 {
@@ -295,74 +384,8 @@ bool follow(const Option<SensorResults> *optionalPosition)
     return true;
 }
 
-typedef enum States
-{
-    START,
-    NOT_DETECTED,
-    DETECTED,
-} State;
-
-typedef class StateMachine
-{
-
-    State state = START;
-    MilliSeconds t0;
-
-    int barcodeResults[100];
-    int len = 0;
-
-public:
-    StateMachine()
-    {
-    }
-
-    State getState()
-    {
-        return state;
-    }
-
-    int *getResults()
-    {
-        return barcodeResults;
-    }
-
-    int getResultLen()
-    {
-        return len;
-    }
-
-    void push(State newState)
-    {
-
-        if (newState == state)
-        {
-            return;
-        }
-
-        switch (state)
-        {
-        case START:
-            state = DETECTED;
-            t0 = millis();
-            break;
-        case NOT_DETECTED:
-            state = DETECTED;
-            barcodeResults[len] = millis() - t0;
-            len++;
-            t0 = millis();
-            break;
-        case DETECTED:
-            state = NOT_DETECTED;
-            barcodeResults[len] = millis() - t0;
-            len++;
-            t0 = millis();
-            break;
-        }
-    }
-
-} BarCodeStateMachine;
-
-void followAndReadBarCode(BarCodeStateMachine *stateMachine)
+template <size_t capacity>
+void followAndReadBarCode(StateMachine<capacity> *stateMachine)
 {
     for (;;)
     {
@@ -434,7 +457,7 @@ void loop()
      *
      */
 
-    BarCodeStateMachine stateMachine = BarCodeStateMachine();
+    auto stateMachine = StateMachine<100>();
     followAndReadBarCode(&stateMachine);
     PLAY_BEEP(buzzer);
     display_centered("Values:" + String(stateMachine.getResultLen()), 4);
