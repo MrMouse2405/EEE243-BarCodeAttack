@@ -56,6 +56,9 @@ ButtonC buttonC;
 // Size of the buffer for the barcode in percent.
 #define SIZE_BUFFER 10
 
+// Amount of Ws and Ns required to identify a character
+#define WIDTH_CHARACTER_SIZE 9
+
 // define our cm unit
 typedef uint64_t MilliSeconds;
 
@@ -184,9 +187,47 @@ char* convertToBarWidths(const size_t arraySize, const unsigned long timeArray[]
         barWidths[i] = (timeArray[i] > firstReading * (100 + SIZE_BUFFER*2) / 100 || timeArray[i] < firstReading * (100 - SIZE_BUFFER*2) / 100) ? 'W' : 'N';
     }
     barWidths[arraySize] = '\0';
-    return strdup(barWidths);
+    return strdup(barWidths); // TODO: Change to method not requiring the freeing of memory
 }
 
+
+/*
+ * Takes a string of 9 Ns and Ws and returns the corresponding character
+ * 
+ * Input: barWidths - a string of 9 Ns and Ws
+ * 
+ * Returns: the corresponding character
+ */
+char widthStringToCharacter(const char* barWidths) {
+    for (int i = 0; i < 44; i++) {
+        // Set string length in code39.h is 9 excluding the first character
+        if (strncmp(barWidths, code39[i] + 1, WIDTH_CHARACTER_SIZE) == 0) {
+            return code39[i][0];
+        }
+    }
+    return '#'; // Default case (no match found)
+}
+
+/*
+ * Takes a string of Ns and Ws and returns the corresponding barcode
+ * 
+ * Input: barWidths - a string of Ns and Ws
+ * 
+ * Returns: the string of corresponding barcode
+ */
+char* widthStringToBarcode(const char* barWidths) {
+    size_t length = strlen(barWidths);
+    size_t truncatedLength = (length / WIDTH_CHARACTER_SIZE) * WIDTH_CHARACTER_SIZE;
+    char* barcode = (char*) malloc((truncatedLength / WIDTH_CHARACTER_SIZE) + 1); // TODO: Change to method not requiring the freeing of memory
+
+    int barcodeIndex = 0;
+    for (size_t i = 0; i < truncatedLength; i += WIDTH_CHARACTER_SIZE) {
+        barcode[barcodeIndex] = widthStringToCharacter(barWidths + i);
+        barcodeIndex++;
+    }
+    barcode[barcodeIndex] = '\0';
+    return barcode;
+}
 
 /*
 * Assesses whether the robot's sensors detect the line
