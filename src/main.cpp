@@ -8,6 +8,7 @@
 */
 
 #include <Pololu3piPlus32U4.h>
+#include "code39.h"
 
 using namespace Pololu3piPlus32U4;
 
@@ -51,6 +52,9 @@ ButtonC buttonC;
 
 // Speed of motors while calibration
 #define CALIBRATION_SPEED 150
+
+// Size of the buffer for the barcode in percent.
+#define SIZE_BUFFER 10
 
 // define our cm unit
 typedef uint64_t MilliSeconds;
@@ -158,6 +162,30 @@ public:
     // return the values
     T get_value() const { return this->value; }
 };
+
+
+/*
+ * Takes an array of unsigned longs and returns a string of Ns and Ws
+ * where N is a narrow bar and W is a wide bar. Assumes only two sizes of bars.
+ * 
+ * Input: timeArray - an array of unsigned longs representing millis
+ * 
+ * Returns: a string of Ns and Ws
+ */
+char* convertToBarWidths(const size_t arraySize, const unsigned long timeArray[]) {
+    char barWidths[arraySize + 1];
+    unsigned long firstReading = timeArray[0];
+    unsigned long differentReading{0}; // This first different reading must be different from the first by a factor of at leat SIZE_BUFFER%
+    for (int i = 1; i < arraySize; i++) {
+        differentReading = (timeArray[i] > firstReading * (100 + SIZE_BUFFER) / 100 || timeArray[i] < firstReading * (100 - SIZE_BUFFER) / 100) ? timeArray[i] : differentReading;
+        if (differentReading != 0) break;
+    }
+    for (int i = 0; i < arraySize; i++) {
+        barWidths[i] = (timeArray[i] > firstReading * (100 + SIZE_BUFFER*2) / 100 || timeArray[i] < firstReading * (100 - SIZE_BUFFER*2) / 100) ? 'W' : 'N';
+    }
+    barWidths[arraySize] = '\0';
+    return strdup(barWidths);
+}
 
 
 /*
