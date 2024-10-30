@@ -266,7 +266,6 @@ void calibrateSensors()
     ledYellow(false);
 }
 
-<<<<<<< HEAD
 /*
  * Takes an array of unsigned longs and returns a string of Ns and Ws
  * where N is a narrow bar and W is a wide bar. Assumes only two sizes of bars.
@@ -293,19 +292,10 @@ char *convertToBarWidths(const size_t arraySize, const MilliSeconds timeArray[])
     barWidths[arraySize] = '\0';
     return strdup(barWidths); // TODO: Change to method not requiring the freeing of memory
 }
-=======
-static unsigned long g_narrowValue = 0;
-static unsigned long g_wideValue = 0;
->>>>>>> 1d1a9166bd3d1f0b4e112e4b082eca536759a28e
 
 /*
-<<<<<<< HEAD
  * Takes a string of 9 Ns and Ws and returns the corresponding character
  *
-=======
- * Takes a string of 9 Ns and Ws and returns the corresponding character.
- * 
->>>>>>> 1d1a9166bd3d1f0b4e112e4b082eca536759a28e
  * Input: barWidths - a string of 9 Ns and Ws
  *
  * Returns: the corresponding character
@@ -324,7 +314,6 @@ char widthStringToCharacter(const char *barWidths)
 }
 
 /*
-<<<<<<< HEAD
  * Takes a string of Ns and Ws and returns the corresponding barcode
  *
  * Input: barWidths - a string of Ns and Ws
@@ -342,103 +331,11 @@ char *widthStringToBarcode(const char *barWidths)
     {
         barcode[barcodeIndex] = widthStringToCharacter(barWidths + i);
         barcodeIndex++;
-=======
- * Takes the calibration array of 9 unsigned longs and sets up the calibration values
- * Returns true if calibration was successful, false otherwise.
- * 
- * Input: calibrationArray - an array of 9 unsigned longs
- * 
- * Returns: true if calibration was successful, false otherwise
- */
-bool widthCalibrate(const unsigned long calibrationArray[]) {
-    g_narrowValue = calibrationArray[0];
-    g_wideValue = 0;
-    
-    // Find the first significantly different reading for calibration
-    for (int i = 1; i < 9; i++) {
-        if (calibrationArray[i] > g_narrowValue * (100 + SIZE_BUFFER) / 100 || 
-            calibrationArray[i] < g_narrowValue * (100 - SIZE_BUFFER) / 100) {
-            g_wideValue = calibrationArray[i];
-            break;
-        }
->>>>>>> 1d1a9166bd3d1f0b4e112e4b082eca536759a28e
     }
-    
-    return g_wideValue != 0;
+    barcode[barcodeIndex] = '\0';
+    return barcode;
 }
 
-<<<<<<< HEAD
-=======
-/*
- * Takes an array of 9 unsigned longs and converts it to a string of Ns and Ws
- * using the previously set calibration values.
- * 
- * Input: timeArray - an array of 9 unsigned longs
- * 
- * Returns: a string of Ns and Ws
- */
-char* convertToBarWidths(const unsigned long timeArray[]) {
-    if (g_narrowValue == 0 || g_wideValue == 0) {
-        return NULL; // Calibration hasn't been done
-    }
-    
-    char* barWidths = (char*)malloc(10);
-    
-    for (int i = 0; i < 9; i++) {
-        bool isCloserToNarrow = abs((long)(timeArray[i] - g_narrowValue)) < abs((long)(timeArray[i] - g_wideValue));
-        barWidths[i] = isCloserToNarrow ? 'N' : 'W';
-    }
-    barWidths[9] = '\0';
-    
-    return barWidths;
-}
-
-/*
- * Takes an array of 9 unsigned longs and returns the corresponding character
- * using the previously set calibration values.
- * 
- * Input: timeArray - an array of 9 unsigned longs
- * 
- * Returns: the corresponding character
- */
-char processTimeArray(const unsigned long timeArray[]) {
-    char* barWidths = convertToBarWidths(timeArray);
-    if (barWidths == NULL) {
-        return '#';
-    }
-
-    int wCount = 0;
-    for (int i = 0; i < WIDTH_CHARACTER_SIZE; i++) {
-        if (barWidths[i] == 'W') {
-            wCount++;
-        }
-    }
-    if (wCount != 3) {
-        
-        return '#'; // TODO: Put a character that represents a too many or too few Wides error
-    }
-
-    char result = widthStringToCharacter(barWidths);
-    free(barWidths);
-    return result;
-}
-
-
-/*
-* Assesses whether the robot's sensors detect the line
-* and calculates the weighted average of the values obtained
-* from the line sensors.
-*
-* Returns Option<int16_t>.
-*
-* If robot's sensors detect the line:
-*   Option<int16_t> will have a value (weighted avg of 3 central IR sensors).
-*
-* If robot's sensors do not detect the line:
-*   Option<int16_t> will be empty.
-*/
-
->>>>>>> 1d1a9166bd3d1f0b4e112e4b082eca536759a28e
 void display_centered(const String &s, const uint8_t line)
 {
     // 10 is half of 21 (see function setup)
