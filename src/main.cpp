@@ -266,32 +266,12 @@ void calibrateSensors()
     ledYellow(false);
 }
 
-/*
- * Takes an array of unsigned longs and returns a string of Ns and Ws
- * where N is a narrow bar and W is a wide bar. Assumes only two sizes of bars.
- * 
- * Input: timeArray - an array of unsigned longs representing millis
- * 
- * Returns: a string of Ns and Ws
- */
-char* convertToBarWidths(const size_t arraySize, const unsigned long timeArray[]) {
-    char barWidths[arraySize + 1];
-    unsigned long firstReading = timeArray[0];
-    unsigned long differentReading{0}; // This first different reading must be different from the first by a factor of at leat SIZE_BUFFER%
-    for (int i = 1; i < arraySize; i++) {
-        differentReading = (timeArray[i] > firstReading * (100 + SIZE_BUFFER) / 100 || timeArray[i] < firstReading * (100 - SIZE_BUFFER) / 100) ? timeArray[i] : differentReading;
-        if (differentReading != 0) break;
-    }
-    for (int i = 0; i < arraySize; i++) {
-        barWidths[i] = (timeArray[i] > firstReading * (100 + SIZE_BUFFER*2) / 100 || timeArray[i] < firstReading * (100 - SIZE_BUFFER*2) / 100) ? 'W' : 'N';
-    }
-    barWidths[arraySize] = '\0';
-    return strdup(barWidths); // TODO: Change to method not requiring the freeing of memory
-}
+static unsigned long g_narrowValue = 0;
+static unsigned long g_wideValue = 0;
 
 
 /*
- * Takes a string of 9 Ns and Ws and returns the corresponding character
+ * Takes a string of 9 Ns and Ws and returns the corresponding character.
  * 
  * Input: barWidths - a string of 9 Ns and Ws
  * 
@@ -308,25 +288,72 @@ char widthStringToCharacter(const char* barWidths) {
 }
 
 /*
- * Takes a string of Ns and Ws and returns the corresponding barcode
+ * Takes the calibration array of 9 unsigned longs and sets up the calibration values
+ * Returns true if calibration was successful, false otherwise.
  * 
- * Input: barWidths - a string of Ns and Ws
+ * Input: calibrationArray - an array of 9 unsigned longs
  * 
- * Returns: the string of corresponding barcode
+ * Returns: true if calibration was successful, false otherwise
  */
-char* widthStringToBarcode(const char* barWidths) {
-    size_t length = strlen(barWidths);
-    size_t truncatedLength = (length / WIDTH_CHARACTER_SIZE) * WIDTH_CHARACTER_SIZE;
-    char* barcode = (char*) malloc((truncatedLength / WIDTH_CHARACTER_SIZE) + 1); // TODO: Change to method not requiring the freeing of memory
-
-    int barcodeIndex = 0;
-    for (size_t i = 0; i < truncatedLength; i += WIDTH_CHARACTER_SIZE) {
-        barcode[barcodeIndex] = widthStringToCharacter(barWidths + i);
-        barcodeIndex++;
+bool calibrate(const unsigned long calibrationArray[]) {
+    g_narrowValue = calibrationArray[0];
+    g_wideValue = 0;
+    
+    // Find the first significantly different reading for calibration
+    for (int i = 1; i < 9; i++) {
+        if (calibrationArray[i] > g_narrowValue * (100 + SIZE_BUFFER) / 100 || 
+            calibrationArray[i] < g_narrowValue * (100 - SIZE_BUFFER) / 100) {
+            g_wideValue = calibrationArray[i];
+            break;
+        }
     }
-    barcode[barcodeIndex] = '\0';
-    return barcode;
+    
+    return g_wideValue != 0;
 }
+
+/*
+ * Takes an array of 9 unsigned longs and converts it to a string of Ns and Ws
+ * using the previously set calibration values.
+ * 
+ * Input: timeArray - an array of 9 unsigned longs
+ * 
+ * Returns: a string of Ns and Ws
+ */
+char* convertToBarWidths(const unsigned long timeArray[]) {
+    if (g_narrowValue == 0 || g_wideValue == 0) {
+        return NULL; // Calibration hasn't been done
+    }
+    
+    char* barWidths = (char*)malloc(10);
+    
+    for (int i = 0; i < 9; i++) {
+        bool isCloserToNarrow = abs((long)(timeArray[i] - g_narrowValue)) < abs((long)(timeArray[i] - g_wideValue));
+        barWidths[i] = isCloserToNarrow ? 'N' : 'W';
+    }
+    barWidths[9] = '\0';
+    
+    return barWidths;
+}
+
+/*
+ * Takes an array of 9 unsigned longs and returns the corresponding character
+ * using the previously set calibration values.
+ * 
+ * Input: timeArray - an array of 9 unsigned longs
+ * 
+ * Returns: the corresponding character
+ */
+char processTimeArray(const unsigned long timeArray[]) {
+    char* barWidths = convertToBarWidths(timeArray);
+    if (barWidths == NULL) {
+        return '#';
+    }
+    
+    char result = widthStringToCharacter(barWidths);
+    free(barWidths);
+    return result;
+}
+
 
 /*
 * Assesses whether the robot's sensors detect the line
