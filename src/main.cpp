@@ -102,7 +102,7 @@ class StateMachine
     State state = START;
     MilliSeconds t0;
 
-    int barcodeResults[capacity];
+    MilliSeconds barcodeResults[capacity];
     size_t len = 0;
 
     void append(int value)
@@ -135,7 +135,7 @@ public:
         return state;
     }
 
-    int *getResults()
+    MilliSeconds *getResults()
     {
         return barcodeResults;
     }
@@ -269,38 +269,44 @@ void calibrateSensors()
 /*
  * Takes an array of unsigned longs and returns a string of Ns and Ws
  * where N is a narrow bar and W is a wide bar. Assumes only two sizes of bars.
- * 
+ *
  * Input: timeArray - an array of unsigned longs representing millis
- * 
+ *
  * Returns: a string of Ns and Ws
  */
-char* convertToBarWidths(const size_t arraySize, const unsigned long timeArray[]) {
+char *convertToBarWidths(const size_t arraySize, const MilliSeconds timeArray[])
+{
     char barWidths[arraySize + 1];
     unsigned long firstReading = timeArray[0];
     unsigned long differentReading{0}; // This first different reading must be different from the first by a factor of at leat SIZE_BUFFER%
-    for (int i = 1; i < arraySize; i++) {
+    for (size_t i = 1; i < arraySize; i++)
+    {
         differentReading = (timeArray[i] > firstReading * (100 + SIZE_BUFFER) / 100 || timeArray[i] < firstReading * (100 - SIZE_BUFFER) / 100) ? timeArray[i] : differentReading;
-        if (differentReading != 0) break;
+        if (differentReading != 0)
+            break;
     }
-    for (int i = 0; i < arraySize; i++) {
-        barWidths[i] = (timeArray[i] > firstReading * (100 + SIZE_BUFFER*2) / 100 || timeArray[i] < firstReading * (100 - SIZE_BUFFER*2) / 100) ? 'W' : 'N';
+    for (size_t i = 0; i < arraySize; i++)
+    {
+        barWidths[i] = (timeArray[i] > firstReading * (100 + SIZE_BUFFER * 2) / 100 || timeArray[i] < firstReading * (100 - SIZE_BUFFER * 2) / 100) ? 'W' : 'N';
     }
     barWidths[arraySize] = '\0';
     return strdup(barWidths); // TODO: Change to method not requiring the freeing of memory
 }
 
-
 /*
  * Takes a string of 9 Ns and Ws and returns the corresponding character
- * 
+ *
  * Input: barWidths - a string of 9 Ns and Ws
- * 
+ *
  * Returns: the corresponding character
  */
-char widthStringToCharacter(const char* barWidths) {
-    for (int i = 0; i < 44; i++) {
+char widthStringToCharacter(const char *barWidths)
+{
+    for (int i = 0; i < 44; i++)
+    {
         // Set string length in code39.h is 9 excluding the first character
-        if (strncmp(barWidths, code39[i] + 1, WIDTH_CHARACTER_SIZE) == 0) {
+        if (strncmp(barWidths, code39[i] + 1, WIDTH_CHARACTER_SIZE) == 0)
+        {
             return code39[i][0];
         }
     }
@@ -309,18 +315,20 @@ char widthStringToCharacter(const char* barWidths) {
 
 /*
  * Takes a string of Ns and Ws and returns the corresponding barcode
- * 
+ *
  * Input: barWidths - a string of Ns and Ws
- * 
+ *
  * Returns: the string of corresponding barcode
  */
-char* widthStringToBarcode(const char* barWidths) {
+char *widthStringToBarcode(const char *barWidths)
+{
     size_t length = strlen(barWidths);
     size_t truncatedLength = (length / WIDTH_CHARACTER_SIZE) * WIDTH_CHARACTER_SIZE;
-    char* barcode = (char*) malloc((truncatedLength / WIDTH_CHARACTER_SIZE) + 1); // TODO: Change to method not requiring the freeing of memory
+    char *barcode = (char *)malloc((truncatedLength / WIDTH_CHARACTER_SIZE) + 1); // TODO: Change to method not requiring the freeing of memory
 
     int barcodeIndex = 0;
-    for (size_t i = 0; i < truncatedLength; i += WIDTH_CHARACTER_SIZE) {
+    for (size_t i = 0; i < truncatedLength; i += WIDTH_CHARACTER_SIZE)
+    {
         barcode[barcodeIndex] = widthStringToCharacter(barWidths + i);
         barcodeIndex++;
     }
@@ -328,26 +336,26 @@ char* widthStringToBarcode(const char* barWidths) {
     return barcode;
 }
 
-/*
-* Assesses whether the robot's sensors detect the line
-* and calculates the weighted average of the values obtained
-* from the line sensors.
-*
-* Returns Option<int16_t>.
-*
-* If robot's sensors detect the line:
-*   Option<int16_t> will have a value (weighted avg of 3 central IR sensors).
-*
-* If robot's sensors do not detect the line:
-*   Option<int16_t> will be empty.
-*/
-
 void display_centered(const String &s, const uint8_t line)
 {
     // 10 is half of 21 (see function setup)
     display.gotoXY(10 - (s.length() / 2), line);
     display.print(s.c_str());
 }
+
+/*
+ * Assesses whether the robot's sensors detect the line
+ * and calculates the weighted average of the values obtained
+ * from the line sensors.
+ *
+ * Returns Option<int16_t>.
+ *
+ * If robot's sensors detect the line:
+ *   Option<int16_t> will have a value (weighted avg of 3 central IR sensors).
+ *
+ * If robot's sensors do not detect the line:
+ *   Option<int16_t> will be empty.
+ */
 
 bool isBarcodeDetected(uint16_t lineSensorValues[NUM_SENSORS])
 {
