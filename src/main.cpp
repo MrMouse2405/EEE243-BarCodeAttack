@@ -295,7 +295,7 @@ char widthStringToCharacter(const char* barWidths) {
  * 
  * Returns: true if calibration was successful, false otherwise
  */
-bool calibrate(const unsigned long calibrationArray[]) {
+bool widthCalibrate(const unsigned long calibrationArray[]) {
     g_narrowValue = calibrationArray[0];
     g_wideValue = 0;
     
