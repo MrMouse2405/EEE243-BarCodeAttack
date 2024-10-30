@@ -357,9 +357,9 @@ char processTimeArray(const unsigned long timeArray[]) {
     }
     if (wCount != 3) {
         
-        return '#';
+        return '#'; // TODO: Put a character that represents a too many or too few Wides error
     }
-    
+
     char result = widthStringToCharacter(barWidths);
     free(barWidths);
     return result;
