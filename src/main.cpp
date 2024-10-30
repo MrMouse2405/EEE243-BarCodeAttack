@@ -348,6 +348,17 @@ char processTimeArray(const unsigned long timeArray[]) {
     if (barWidths == NULL) {
         return '#';
     }
+
+    int wCount = 0;
+    for (int i = 0; i < WIDTH_CHARACTER_SIZE; i++) {
+        if (barWidths[i] == 'W') {
+            wCount++;
+        }
+    }
+    if (wCount != 3) {
+        
+        return '#';
+    }
     
     char result = widthStringToCharacter(barWidths);
     free(barWidths);
