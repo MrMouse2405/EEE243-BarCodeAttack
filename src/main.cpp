@@ -266,8 +266,8 @@ void calibrateSensors()
     ledYellow(false);
 }
 
-static unsigned long g_narrowValue = 0;
-static unsigned long g_wideValue = 0;
+static unsigned long g_narrowValue = 0; // TODO: Rename to standard
+static unsigned long g_wideValue = 0; // TODO: Move to top
 
 
 /*
