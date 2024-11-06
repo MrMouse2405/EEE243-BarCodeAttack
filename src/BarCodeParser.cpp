@@ -10,6 +10,8 @@
 #include "BarCodeParser.h"
 #include "code39.h"
 
+using namespace Lab4;
+
 namespace BarCodeParser {
     static uint64_t g_narrowValue = 0; // TODO: Rename to standard
     static uint64_t g_wideValue = 0; // TODO: Move to top
@@ -22,14 +24,14 @@ namespace BarCodeParser {
  * 
  * Returns: the corresponding character
  */
-Lab4::Option<char> BarCodeParser::widthStringToCharacter(const char* barWidths) {
+Option<char> BarCodeParser::widthStringToCharacter(const char* barWidths) {
     for (int i = 0; i < 44; i++) {
         // Set string length in code39.h is 9 excluding the first character
         if (strncmp(barWidths, code39[i] + 1, WIDTH_CHARACTER_SIZE) == 0) {
-            return Lab4::Option<char>(code39[i][0]);
+            return Option<char>(code39[i][0]);
         }
     }
-    return Lab4::Option<char>(); // Default case (no match found)
+    return Option<char>(); // Default case (no match found)
 }
 
 /*
@@ -88,10 +90,10 @@ char* BarCodeParser::convertToBarWidths(const uint64_t timeArray[]) {
  * 
  * Returns: the corresponding character
  */
-Lab4::Option<char> BarCodeParser::processTimeArray(const uint64_t timeArray[]) {
+Option<char> BarCodeParser::processTimeArray(const uint64_t timeArray[]) {
     char* barWidths = convertToBarWidths(timeArray);
     if (barWidths == NULL) {
-        return Lab4::Option<char>();
+        return Option<char>();
     }
 
     int wCount = 0;
@@ -102,22 +104,22 @@ Lab4::Option<char> BarCodeParser::processTimeArray(const uint64_t timeArray[]) {
     }
     if (wCount != 3) {
         
-        return Lab4::Option<char>(); // TODO: Put a character that represents a too many or too few Wides error
+        return Option<char>(); // TODO: Put a character that represents a too many or too few Wides error
     }
 
-    Lab4::Option<char> optionalResult = widthStringToCharacter(barWidths);
+    Option<char> optionalResult = widthStringToCharacter(barWidths);
     char result;
 
     switch(optionalResult.checkState()) {
-        case Lab4::ResultState::None: {
-            return Lab4::Option<char>();
+        case ResultState::None: {
+            return Option<char>();
         }
-        case Lab4::ResultState::Some: {
+        case ResultState::Some: {
             result = optionalResult.getValue();
             break;
         }
     }
     
     free(barWidths);
-    return Lab4::Option<char>(result);
+    return Option<char>(result);
 }
