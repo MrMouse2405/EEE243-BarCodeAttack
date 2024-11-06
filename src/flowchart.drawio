@@ -1,9 +1,70 @@
 <mxfile host="65bd71144e">
-    <diagram id="09Q0TClw8zUIB_HQNkVO" name="Page-1">
-        <mxGraphModel dx="614" dy="397" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <diagram id="C5RBs43oDa-KdzZeNtuy" name="Code Structure">
+        <mxGraphModel dx="945" dy="611" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="900" background="none" math="0" shadow="0">
             <root>
-                <mxCell id="0"/>
-                <mxCell id="1" parent="0"/>
+                <mxCell id="WIyWlLk6GJQsqaUBKTNV-0"/>
+                <mxCell id="WIyWlLk6GJQsqaUBKTNV-1" parent="WIyWlLk6GJQsqaUBKTNV-0"/>
+                <mxCell id="main" value="main() [Abstract]" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#f5f5f5;fontColor=#000000;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+                    <mxGeometry x="650" y="100" width="160" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="mainDesc" value="Entry point&#10;Calls setup() and loop()" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="main">
+                    <mxGeometry y="26" width="160" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="globals" value="Global Objects" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#e1d5e7;fontColor=#000000;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+                    <mxGeometry x="380" y="100" width="160" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="globalsContent" value="OLED display&#10;Buzzer buzzer&#10;LineSensors lineSensors&#10;Motors motors&#10;ButtonA buttonA&#10;ButtonB buttonB&#10;ButtonC buttonC&#10;g_narrowValue&#10;g_wideValue" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="globals">
+                    <mxGeometry y="26" width="160" height="134" as="geometry"/>
+                </mxCell>
+                <mxCell id="classes" value="Classes" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#dae8fc;fontColor=#000000;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+                    <mxGeometry x="380" y="280" width="200" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="classesContent" value="StateMachine&lt;capacity&gt;&#10;- Manages barcode reading states&#10;&#10;Option&lt;T&gt;&#10;- Simulates std::optional&#10;- Used for sensor readings" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="classes">
+                    <mxGeometry y="26" width="200" height="94" as="geometry"/>
+                </mxCell>
+                <mxCell id="barcode" value="Barcode Processing" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#d5e8d4;fontColor=#000000;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+                    <mxGeometry x="630" y="480" width="200" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="barcodeContent" value="widthStringToCharacter()&#10;widthCalibrate()&#10;convertToBarWidths()&#10;processTimeArray()" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="barcode">
+                    <mxGeometry y="26" width="200" height="94" as="geometry"/>
+                </mxCell>
+                <mxCell id="linefollow" value="Line Following" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#ffe6cc;fontColor=#000000;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+                    <mxGeometry x="630" y="280" width="200" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="linefollowContent" value="detectLines()&#10;follow()&#10;followAndReadBarCode()&#10;calibrateSensors()" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="linefollow">
+                    <mxGeometry y="26" width="200" height="94" as="geometry"/>
+                </mxCell>
+                <mxCell id="mainflow" value="Main Program Flow" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#fff2cc;fontColor=#000000;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+                    <mxGeometry x="930" y="270" width="160" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="mainflowContent" value="setup()&#10;- Initialize display&#10;- Set sensor timeout&#10;&#10;loop()&#10;- Main program logic&#10;- Called repeatedly" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="mainflow">
+                    <mxGeometry y="26" width="160" height="114" as="geometry"/>
+                </mxCell>
+                <mxCell id="flow1" value="" style="endArrow=classic;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;rounded=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="main" target="linefollow">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="flow2" value="" style="endArrow=classic;html=1;exitX=1;exitY=0.5;entryX=0.5;entryY=0;rounded=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="main" target="mainflow">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1010" y="135"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="helpers" value="Helper Functions" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=0;resizeParent=1;resizeParentMax=0;resizeLast=0;collapsible=1;marginBottom=0;fillColor=#f8cecc;fontColor=#000000;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+                    <mxGeometry x="910" y="480" width="200" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="helpersContent" value="display_centered()&#10;isBarcodeDetected()" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" vertex="1" parent="helpers">
+                    <mxGeometry y="26" width="200" height="64" as="geometry"/>
+                </mxCell>
+                <mxCell id="dep1" value="Uses" style="endArrow=open;endSize=12;dashed=1;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="linefollow" target="barcode">
+                    <mxGeometry width="160" relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="dep2" value="Uses" style="endArrow=open;endSize=12;dashed=1;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="mainflow" target="linefollow">
+                    <mxGeometry width="160" relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="dep3" value="Uses" style="endArrow=open;endSize=12;dashed=1;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="mainflow" target="helpers">
+                    <mxGeometry width="160" relative="1" as="geometry"/>
+                </mxCell>
             </root>
         </mxGraphModel>
     </diagram>
