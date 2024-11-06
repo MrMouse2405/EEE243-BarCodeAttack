@@ -1,21 +1,21 @@
-/** 
+/**
  * BarCodeReader
- * 
+ *
  * Responsible for taking raw values from the IR
  * Sensors in batches and parsing them into
  * code39 character set.
- * 
- * 
+ *
+ *
  * Author: OCdt Syed
  * Date: 2024-11-01
- * 
-*/
-
+ *
+ */
 
 #pragma once
 #include "Lab4.h"
 
-namespace BarCodeReading {
+namespace BarCodeReading
+{
 
     typedef enum
     {
@@ -41,7 +41,8 @@ namespace BarCodeReading {
         Success
     } BarCodeReaderStates;
 
-    typedef enum {
+    typedef enum
+    {
         // start reading
         Start,
         // finish reading
@@ -49,18 +50,19 @@ namespace BarCodeReading {
     } BarCodeReaderActions;
 
     /**
-     * 
+     *
      * class BarCodeReader
-     * 
+     *
      * Responsible for reading values while
      * robot is scanning over the barcode
-     * 
+     *
      * ReaderCapacity is the maximum
      * number of code39 character it can read.
-     * 
-    */
-    template<size_t ReaderCapacity>
-    class BarCodeReader {
+     *
+     */
+    template <size_t ReaderCapacity>
+    class BarCodeReader
+    {
     private:
         BarCodeReaderStates state = Initialized;
 
@@ -69,7 +71,6 @@ namespace BarCodeReading {
         size_t batchLen = 0;
         uint64_t batch[WIDTH_CHARACTER_SIZE];
 
-
         size_t code39ResultsLen = 0;
         char code39Results[ReaderCapacity];
 
@@ -77,19 +78,17 @@ namespace BarCodeReading {
         void stepTracker();
 
     public:
-        BarCodeReader();
-        ~BarCodeReader();
         /**
-         * Returns the current state of Barcode Sensor 
-         * 
+         * Returns the current state of Barcode Sensor
+         *
          * Check definition of BarCodeReaderStates to understand
          * the intent of each state
-        */
+         */
         BarCodeReaderStates getState();
         /**
          * This should be called in a loop while the robot
-         * is scanning 
-         * 
+         * is scanning
+         *
          */
         void read();
     };

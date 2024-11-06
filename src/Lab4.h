@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Pololu3piPlus32U4.h"
 
 // Sensor Constants
@@ -53,73 +52,38 @@
  *
  */
 
-namespace Lab4 {
+namespace Lab4
+{
 
-    Pololu3piPlus32U4::OLED display;
-    Pololu3piPlus32U4::Buzzer buzzer;
-    Pololu3piPlus32U4::ButtonB buttonA;
-    Pololu3piPlus32U4::ButtonB buttonB;
-    Pololu3piPlus32U4::ButtonB buttonC;
-
-    void setup() {
-        display.setLayout21x8();
-    }
-
-    void playGo() {
-        buzzer.play("L16 cdegreg4");
-        while (buzzer.isPlaying()){}
-    }
-
-    void playBeep(){
-        buzzer.play(">g32>>c32");
-        while (buzzer.isPlaying());     
-    }
-
-    void display_centered(const String &s, const uint8_t line)
-    {   
-        // 10 is half of 21 (see function setup)
-        display.gotoXY(10 - (s.length() / 2), line);
-        display.print(s.c_str());
-    }
-
-    /*
-     *
-     *  Welcome Screen
-     *
-     */
-    void welcomeScreen() {
-        display_centered("Abdul Mannan Syed", 0);
-        display_centered("Nathan Gratton", 1);
-        display_centered("Lab 4: Barcode", 4);
-        display_centered("To start, press B", 7);
-        buttonB.waitForButton();
-        display.clear();
-    }
-
-    typedef enum OptionType {
+    typedef enum OptionType
+    {
         Some,
         None,
     } ResultState;
 
-    template<typename T>
-    class Option {
-        private:
-            const T value;
-            const ResultState exists;
-        public:
-            Option(T value) : value(value), exists(ResultState::Some) {};
-            Option() : value(None), exists(ResultState::None) {};
-            ~Option() {};
-            T getValue() const {
-                return value;
-            }
-            T* getPointer() const {
-                return &value;
-            }
-            ResultState checkState() const {
-                return exists;
-            }
-    };
+    template <typename T>
+    class Option
+    {
+    private:
+        const T value;
+        const ResultState exists;
 
+    public:
+        Option(T value) : value(value), exists(ResultState::Some) {};
+        Option() : value(None), exists(ResultState::None) {};
+        ~Option() {};
+        T getValue() const
+        {
+            return value;
+        }
+        T *getPointer() const
+        {
+            return &value;
+        }
+        ResultState checkState() const
+        {
+            return exists;
+        }
+    };
 
 }

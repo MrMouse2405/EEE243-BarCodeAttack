@@ -1,6 +1,7 @@
 #pragma once
 
-namespace LineFollowing {
+namespace LineFollowing
+{
     typedef enum LFStates
     {
         // Robot is ready for action
@@ -18,7 +19,8 @@ namespace LineFollowing {
         ReachedEnd,
     } LineFollowingStates;
 
-    typedef enum LFActions {
+    typedef enum LFActions
+    {
         // calibrate the IR sensors
         Calibrate,
         // start the line follower algorithm
@@ -27,33 +29,33 @@ namespace LineFollowing {
         Stop,
     } LineFollowingActions;
 
-    class LineFollower {
+    class LineFollower
+    {
     private:
-         // Tracks the state of Line Follower
+        // Tracks the state of Line Follower
         LineFollowingStates state = Initialized;
         void followLine();
+
     public:
-        LineFollower();
-        ~LineFollower();
         /**
          * This should be called in a loop while the robot
          * is allowed to move
-         * 
+         *
          */
         void follow();
         /**
-         * 
+         *
          *  Push user defined actions
-         * 
+         *
          *  i.e give commands to start / stop
          *  the algorithm
-         * 
-        */
+         *
+         */
         void pushAction(LFActions action);
         /**
-         * 
+         *
          *  Get the current state of algorithm
-         * 
+         *
          */
         LineFollowingStates getState();
     };

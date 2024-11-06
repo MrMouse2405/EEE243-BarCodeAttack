@@ -1,22 +1,23 @@
-/** 
+/**
  * Sensors
- * 
+ *
  * Responsible for calibrating and obtaining
  * values from the environment via the IR sensors.
- * 
+ *
  * Author: OCdt Syed
  * Date: 2024-10-31
- * 
-*/
+ *
+ */
 
 #include "Sensors.h"
+#include "Pololu3piPlus32U4.h"
 
-namespace Sensors {
+namespace Sensors
+{
     Pololu3piPlus32U4::LineSensors lineSensors;
     // values read from the sensors will be stored here
     static uint16_t lineSensorValues[NUM_SENSORS];
 }
-
 
 /*
  * Calibrates the sensors by reading values as the robot turns,

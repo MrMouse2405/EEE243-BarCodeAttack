@@ -1,40 +1,41 @@
 #include "LineFollowing.h"
-#include "Sensors.h"    
+#include "Sensors.h"
 
 using namespace LineFollowing;
 
-LineFollower::LineFollower() {}
-LineFollower::~LineFollower() {}
-
 /**
- * 
+ *
  * Algorithm for following the line
- * 
+ *
  * sets state to 'ReachedEnd' if the
  * IR sensors no longer detect the line.
- * 
+ *
  * used PID controller for moving the robot
- * 
+ *
  */
-void LineFollower::followLine() {
+void LineFollower::followLine()
+{
     // Get the position of the line.
     static int16_t lastError = 0;
     // Get IR sensor results
     Lab4::Option<int16_t> optionalPositon = Sensors::detectLines();
     int64_t position;
-    // Check if a line is detected 
+    // Check if a line is detected
     // optionalPosition will be None if it's not detected
-    switch(optionalPositon.checkState()) {
-        case Lab4::ResultState::None: {
-            this->state = ReachedEnd;
-            return;
-        }
-        case Lab4::ResultState::Some: {
-            // we have a value, continue
-            position = optionalPositon.getValue();
-        }
+    switch (optionalPositon.checkState())
+    {
+    case Lab4::ResultState::None:
+    {
+        this->state = ReachedEnd;
+        return;
     }
-     // Our "error" is how far we are away from the center of the
+    case Lab4::ResultState::Some:
+    {
+        // we have a value, continue
+        position = optionalPositon.getValue();
+    }
+    }
+    // Our "error" is how far we are away from the center of the
     // line, which corresponds to position 2000.
     const int error = position - 2000;
     // Get motor speed difference using PROPORTIONAL_CONSTANT and derivative
@@ -60,83 +61,127 @@ void LineFollower::followLine() {
 /**
  * This should be called in a loop while the robot
  * is allowed to move
- * 
+ *
  */
-void LineFollower::follow(){
-    switch (this->state) {
-        case Initialized: {
-            // do nothing
-            break;
-        }
-        case Calibrating: {
-            Sensors::calibrateSensors();
-            this->state = Ready;
-            break;
-        }
-        case Ready: {
-            // do nothing
-            break;
-        }
-        case Following: {
-            this->followLine();
-            break;
-        }
-        case ForcedStop: {
-            Pololu3piPlus32U4::Motors::setSpeeds(0,0);
-            break;
-        }
-        case ReachedEnd: {
-            Pololu3piPlus32U4::Motors::setSpeeds(0,0);
-            break;
-        }
+void LineFollower::follow()
+{
+    switch (this->state)
+    {
+    case Initialized:
+    {
+        // do nothing
+        break;
+    }
+    case Calibrating:
+    {
+        Sensors::calibrateSensors();
+        this->state = Ready;
+        break;
+    }
+    case Ready:
+    {
+        // do nothing
+        break;
+    }
+    case Following:
+    {
+        this->followLine();
+        break;
+    }
+    case ForcedStop:
+    {
+        Pololu3piPlus32U4::Motors::setSpeeds(0, 0);
+        break;
+    }
+    case ReachedEnd:
+    {
+        Pololu3piPlus32U4::Motors::setSpeeds(0, 0);
+        break;
+    }
     }
 }
 /**
- * 
+ *
  *  Push user defined actions
- * 
+ *
  *  i.e give commands to start / stop
  *  the algorithm
- * 
-*/
-void LineFollower::pushAction(LineFollowingActions action){
+ *
+ */
+void LineFollower::pushAction(LineFollowingActions action)
+{
     switch (action)
     {
-        case Start: {
-            switch (this->state)
-            {
-                case Initialized: {break;}
-                case Calibrating: { break; }
-                default: { this->state = Following; break; }
-            }
-            break;
-        }        
-        case Stop: {
-            switch (this->state)
-            {
-                case Calibrating: { break; }
-                case ReachedEnd: {break;}
-                default: { this->state = ForcedStop; break; }
-            }
+    case Start:
+    {
+        switch (this->state)
+        {
+        case Initialized:
+        {
             break;
         }
-        case Calibrate: {
-            switch (this->state)
-            {
-                case Initialized: { this->state = Calibrating; break; }
-                case ReachedEnd: { this->state = Calibrating; break;}
-                default: { break; }
-            }
+        case Calibrating:
+        {
             break;
         }
+        default:
+        {
+            this->state = Following;
+            break;
+        }
+        }
+        break;
+    }
+    case Stop:
+    {
+        switch (this->state)
+        {
+        case Calibrating:
+        {
+            break;
+        }
+        case ReachedEnd:
+        {
+            break;
+        }
+        default:
+        {
+            this->state = ForcedStop;
+            break;
+        }
+        }
+        break;
+    }
+    case Calibrate:
+    {
+        switch (this->state)
+        {
+        case Initialized:
+        {
+            this->state = Calibrating;
+            break;
+        }
+        case ReachedEnd:
+        {
+            this->state = Calibrating;
+            break;
+        }
+        default:
+        {
+            break;
+        }
+        }
+        break;
+    }
     }
 }
 
 /**
- * 
+ *
  *  Get the current state of algorithm
- * 
+ *
  */
-LineFollowingStates LineFollower::getState(){
+LineFollowingStates LineFollower::getState()
+{
     return this->state;
 }
