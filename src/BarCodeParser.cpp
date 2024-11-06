@@ -10,6 +10,8 @@
 #include "BarCodeParser.h"
 #include "code39.h"
 
+using namespace Lab4;
+
 namespace BarCodeParser {
     static uint64_t g_narrowValue = 0; // TODO: Rename to standard
     static uint64_t g_wideValue = 0; // TODO: Move to top
@@ -22,6 +24,7 @@ namespace BarCodeParser {
  *
  * Returns: the corresponding character
  */
+<<<<<<< HEAD
 Lab4::Option<char> BarCodeParser::widthStringToCharacter(const char *barWidths) {
     for (auto i: code39) {
         // Set string length in code39.h is 9 excluding the first character
@@ -30,6 +33,16 @@ Lab4::Option<char> BarCodeParser::widthStringToCharacter(const char *barWidths) 
         }
     }
     return {}; // Default case (no match found)
+=======
+Option<char> BarCodeParser::widthStringToCharacter(const char* barWidths) {
+    for (int i = 0; i < 44; i++) {
+        // Set string length in code39.h is 9 excluding the first character
+        if (strncmp(barWidths, code39[i] + 1, WIDTH_CHARACTER_SIZE) == 0) {
+            return Option<char>(code39[i][0]);
+        }
+    }
+    return Option<char>(); // Default case (no match found)
+>>>>>>> 79dfcae1cbaedb26c5c9269c58f55c219b0b36ad
 }
 
 /*
@@ -89,10 +102,17 @@ char *BarCodeParser::convertToBarWidths(const uint64_t timeArray[]) {
  *
  * Returns: the corresponding character
  */
+<<<<<<< HEAD
 Lab4::Option<char> BarCodeParser::processTimeArray(const uint64_t timeArray[]) {
     char *barWidths = convertToBarWidths(timeArray);
     if (barWidths == nullptr) {
         return {};
+=======
+Option<char> BarCodeParser::processTimeArray(const uint64_t timeArray[]) {
+    char* barWidths = convertToBarWidths(timeArray);
+    if (barWidths == NULL) {
+        return Option<char>();
+>>>>>>> 79dfcae1cbaedb26c5c9269c58f55c219b0b36ad
     }
 
     int wCount = 0;
@@ -102,6 +122,7 @@ Lab4::Option<char> BarCodeParser::processTimeArray(const uint64_t timeArray[]) {
         }
     }
     if (wCount != 3) {
+<<<<<<< HEAD
         free(barWidths);
         return {}; // TODO: Put a character that represents a too many or too few Wides error
     }
@@ -117,9 +138,30 @@ Lab4::Option<char> BarCodeParser::processTimeArray(const uint64_t timeArray[]) {
                 result = optionalResult.getValue();
                 break;
             }
+=======
+        
+        return Option<char>(); // TODO: Put a character that represents a too many or too few Wides error
+    }
+
+    Option<char> optionalResult = widthStringToCharacter(barWidths);
+    char result;
+
+    switch(optionalResult.checkState()) {
+        case ResultState::None: {
+            return Option<char>();
+        }
+        case ResultState::Some: {
+            result = optionalResult.getValue();
+            break;
+>>>>>>> 79dfcae1cbaedb26c5c9269c58f55c219b0b36ad
         }
     }
 
     free(barWidths);
+<<<<<<< HEAD
     return Lab4::Option<char>(result);
 }
+=======
+    return Option<char>(result);
+}
+>>>>>>> 79dfcae1cbaedb26c5c9269c58f55c219b0b36ad
