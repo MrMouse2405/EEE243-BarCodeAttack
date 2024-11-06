@@ -13,7 +13,6 @@
 #include "Lab4.h"
 
 namespace Sensors {
-
     /*
     * Calibrates the sensors by reading values as the robot turns,
     * comparing these to previous readings, and setting the highest value
@@ -21,7 +20,7 @@ namespace Sensors {
     *
     * Takes no parameters and returns no values.
     */
-    
+
     void calibrateSensors();
 
     /*
@@ -38,7 +37,7 @@ namespace Sensors {
     *   Option<int16_t> will be empty.
     */
 
-    Lab4::Option<int16_t> detectLines();
+    Lab4::Option<int> detectLines();
 
     /*
     * Determines if both Left and Right IR Sensors have detected

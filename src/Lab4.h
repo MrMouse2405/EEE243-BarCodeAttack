@@ -1,5 +1,4 @@
 #pragma once
-#include "Pololu3piPlus32U4.h"
 
 // Sensor Constants
 #define NUM_SENSORS 5
@@ -21,20 +20,23 @@
 #define LINE_THRESHOLD 200
 
 // Maximum & Minimum speed the motors will be allowed to turn.
-#define MAX_SPEED 200
+#define MAX_SPEED 50
 #define MIN_SPEED 0
 
 // Speed the motors will run when centered on the line.
 #define BASE_SPEED MAX_SPEED
 
 // Speed of motors while calibration
-#define CALIBRATION_SPEED 150
+#define CALIBRATION_SPEED 50
 
 // Size of the buffer for the barcode in percent.
 #define SIZE_BUFFER 10
 
 // Amount of Ws and Ns required to identify a character
 #define WIDTH_CHARACTER_SIZE 9
+
+// Amount of character barcode reader can store
+#define BARCODE_READER_CAPACITY 20
 
 /*
  * PID Constants
@@ -52,38 +54,36 @@
  *
  */
 
-namespace Lab4
-{
-
-    typedef enum OptionType
-    {
+namespace Lab4 {
+    typedef enum OptionType {
         Some,
         None,
     } ResultState;
 
-    template <typename T>
-    class Option
-    {
-    private:
-        const T value;
+    template<typename T>
+    class Option {
+        T value;
         const ResultState exists;
 
     public:
-        Option(T value) : value(value), exists(ResultState::Some) {};
-        Option() : value(None), exists(ResultState::None) {};
-        ~Option() {};
-        T getValue() const
-        {
+        explicit Option(T value) : value(value), exists(Some) {
+        }
+
+        Option() : exists(None) {
+        }
+
+        ~Option() = default;
+
+        T getValue() const {
             return value;
         }
-        T *getPointer() const
-        {
+
+        T *getPointer() const {
             return &value;
         }
-        ResultState checkState() const
-        {
+
+        ResultState checkState() const {
             return exists;
         }
     };
-
 }

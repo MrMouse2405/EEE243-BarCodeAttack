@@ -1,3 +1,14 @@
+/**
+ * LineFollower
+ *
+ * Responsible for following black
+ * line as sensed by the IR sensors.
+ *
+ * Author: OCdt Syed
+ * Date: 2024-11-01
+ *
+ */
+
 #pragma once
 
 namespace LineFollowing
@@ -31,7 +42,6 @@ namespace LineFollowing
 
     class LineFollower
     {
-    private:
         // Tracks the state of Line Follower
         LineFollowingStates state = Initialized;
         void followLine();
@@ -57,6 +67,6 @@ namespace LineFollowing
          *  Get the current state of algorithm
          *
          */
-        LineFollowingStates getState();
+        LineFollowingStates getState() const;
     };
 }

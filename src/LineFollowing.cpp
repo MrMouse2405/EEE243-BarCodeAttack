@@ -1,3 +1,14 @@
+/**
+ * LineFollower
+ *
+ * Responsible for following black
+ * line as sensed by the IR sensors.
+ *
+ * Author: OCdt Syed
+ * Date: 2024-11-01
+ *
+ */
+#include <Pololu3piPlus32U4.h>
 #include "LineFollowing.h"
 #include "Sensors.h"
 
@@ -13,27 +24,26 @@ using namespace LineFollowing;
  * used PID controller for moving the robot
  *
  */
-void LineFollower::followLine()
-{
+void LineFollower::followLine() {
     // Get the position of the line.
     static int16_t lastError = 0;
     // Get IR sensor results
-    Lab4::Option<int16_t> optionalPositon = Sensors::detectLines();
-    int64_t position;
+    int64_t position = 0;
     // Check if a line is detected
-    // optionalPosition will be None if it's not detected
-    switch (optionalPositon.checkState())
     {
-    case Lab4::ResultState::None:
-    {
-        this->state = ReachedEnd;
-        return;
-    }
-    case Lab4::ResultState::Some:
-    {
-        // we have a value, continue
-        position = optionalPositon.getValue();
-    }
+        // optionalPosition will be None if it's not detected
+        Lab4::Option<int> optionalPositon = Sensors::detectLines();
+        switch (optionalPositon.checkState()) {
+            case Lab4::ResultState::None: {
+                Pololu3piPlus32U4::Motors::setSpeeds(0, 0);
+                this->state = ReachedEnd;
+                return;
+            }
+            case Lab4::ResultState::Some: {
+                // we have a value, continue
+                position = optionalPositon.getValue();
+            }
+        }
     }
     // Our "error" is how far we are away from the center of the
     // line, which corresponds to position 2000.
@@ -63,43 +73,33 @@ void LineFollower::followLine()
  * is allowed to move
  *
  */
-void LineFollower::follow()
-{
-    switch (this->state)
-    {
-    case Initialized:
-    {
-        // do nothing
-        break;
-    }
-    case Calibrating:
-    {
-        Sensors::calibrateSensors();
-        this->state = Ready;
-        break;
-    }
-    case Ready:
-    {
-        // do nothing
-        break;
-    }
-    case Following:
-    {
-        this->followLine();
-        break;
-    }
-    case ForcedStop:
-    {
-        Pololu3piPlus32U4::Motors::setSpeeds(0, 0);
-        break;
-    }
-    case ReachedEnd:
-    {
-        Pololu3piPlus32U4::Motors::setSpeeds(0, 0);
-        break;
-    }
+void LineFollower::follow() {
+    switch (this->state) {
+        case Initialized: {
+            // do nothing
+            break;
+        }
+        case Calibrating: {
+            Sensors::calibrateSensors();
+            this->state = Ready;
+            break;
+        }
+        case Ready: {
+            // do nothing
+            break;
+        }
+        case Following: {
+            this->followLine();
+            break;
+        }
+        case ForcedStop:
+        case ReachedEnd: {
+            Pololu3piPlus32U4::Motors::setSpeeds(0, 0);
+            break;
+        }
     }
 }
+
 /**
  *
  *  Push user defined actions
@@ -108,71 +108,50 @@ void LineFollower::follow()
  *  the algorithm
  *
  */
-void LineFollower::pushAction(LineFollowingActions action)
-{
-    switch (action)
-    {
-    case Start:
-    {
-        switch (this->state)
-        {
-        case Initialized:
-        {
+void LineFollower::pushAction(const LineFollowingActions action) {
+    switch (action) {
+        case Start: {
+            switch (this->state) {
+                case Initialized: {
+                    break;
+                }
+                case Calibrating: {
+                    break;
+                }
+                default: {
+                    this->state = Following;
+                    break;
+                }
+            }
             break;
         }
-        case Calibrating:
-        {
+        case Stop: {
+            switch (this->state) {
+                case Calibrating:
+                case ReachedEnd: {
+                    break;
+                }
+                default: {
+                    this->state = ForcedStop;
+                    Pololu3piPlus32U4::Motors::setSpeeds(0,0);
+                    break;
+                }
+            }
             break;
         }
-        default:
-        {
-            this->state = Following;
+        case Calibrate: {
+            switch (this->state) {
+                case Initialized:
+                case ReachedEnd: {
+                    this->state = Calibrating;
+                    break;
+                }
+                default: {
+                    break;
+                }
+            }
             break;
         }
-        }
-        break;
-    }
-    case Stop:
-    {
-        switch (this->state)
-        {
-        case Calibrating:
-        {
-            break;
-        }
-        case ReachedEnd:
-        {
-            break;
-        }
-        default:
-        {
-            this->state = ForcedStop;
-            break;
-        }
-        }
-        break;
-    }
-    case Calibrate:
-    {
-        switch (this->state)
-        {
-        case Initialized:
-        {
-            this->state = Calibrating;
-            break;
-        }
-        case ReachedEnd:
-        {
-            this->state = Calibrating;
-            break;
-        }
-        default:
-        {
-            break;
-        }
-        }
-        break;
-    }
     }
 }
 
@@ -181,7 +160,6 @@ void LineFollower::pushAction(LineFollowingActions action)
  *  Get the current state of algorithm
  *
  */
-LineFollowingStates LineFollower::getState()
-{
+LineFollowingStates LineFollower::getState() const {
     return this->state;
 }

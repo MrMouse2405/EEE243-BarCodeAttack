@@ -11,6 +11,7 @@
 
 #pragma once
 #include "Lab4.h"
+#include <Arduino.h>
 
 namespace BarCodeParser {
     /*
@@ -20,7 +21,7 @@ namespace BarCodeParser {
     * 
     * Returns: the corresponding character
     */
-    Lab4::Option<char> widthStringToCharacter(const char* barWidths);
+    Lab4::Option<char> widthStringToCharacter(const char *barWidths);
 
     /*
     * Takes the calibration array of 9 unsigned longs and sets up the calibration values
@@ -40,7 +41,7 @@ namespace BarCodeParser {
     * 
     * Returns: a string of Ns and Ws
     */
-    char* convertToBarWidths(const uint64_t timeArray[WIDTH_CHARACTER_SIZE]);
+    char *convertToBarWidths(const uint64_t timeArray[WIDTH_CHARACTER_SIZE]);
 
     /*
     * Takes an array of 9 unsigned longs and returns the corresponding character
