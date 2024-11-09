@@ -80,6 +80,7 @@ public:
     size_t batchLen = 0;
     size_t code39ResultsLen = 0;
     uint64_t batch[WIDTH_CHARACTER_SIZE]{};
+    char *barWidths{};
     char code39Results[BARCODE_READER_CAPACITY]{};
 
     /**

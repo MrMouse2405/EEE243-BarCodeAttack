@@ -59,76 +59,101 @@ void loop() {
     // Start Following Line, and scanning barcodes
     driver.pushAction(LineFollowingActions::Start);
     scanner.pushAction(BarCodeReaderActions::Start);
-    BarCodeReaderStates last = scanner.getState();
+    // BarCodeReaderStates last = scanner.getState();
     while (driver.getState() == Following) {
         driver.follow();
         scanner.read();
 
-        if (scanner.getState() != last) {
-            last = scanner.getState();
-            Motors::setSpeeds(0,0);
-            displayCentered(String(scanner.getState()),5);
-            buttonB.waitForButton();
-            display.clear();
-            Motors::setSpeeds(50,50);
-        }
-        if (scanner.inErrorState()) {
+        // if (scanner.getState() != last) {
+        //     last = scanner.getState();
+        //     Motors::setSpeeds(0, 0);
+        //     displayCentered(String(scanner.getState()), 5);
+        //     buttonB.waitForButton();
+        //     display.clear();
+        //     Motors::setSpeeds(50, 50);
+        // }
+        if (scanner.inErrorState() || scanner.getState() == BarCodeReaderStates::Success) {
             driver.pushAction(Stop);
+            break;
         }
     }
     // scanner.pushAction(Finish);
     display.clear();
+    displayCentered("Stopped", 0);
 
     const auto scannedResult = scanner.getCode39Results();
     switch (scannedResult.checkState()) {
         case Lab4::ResultState::Some:
-            displayResult(scannedResult.getValue());
+            displayCentered("Result:", 1);
+            displayCentered(String(scannedResult.getValue().string), 2);
+            displayCentered("Len:" + String(scannedResult.getValue().length), 3);
             break;
+        case Lab4::ResultState::None: {
+            display.clear();
+            switch (scanner.getState()) {
+                case InvalidBarCodeError: {
+                    displayCentered("Bad Code", 0);
+                    displayCentered("RS:" + String(scanner.get()) + '\0', 1);
+                    displayCentered("RL" + String(scanner.code39ResultsLen), 2);
+                    String s;
+                    String s1;
+                    String s2;
 
-        case Lab4::ResultState::None:
-            displayError(scanner.getState());
-            break;
+                    for (int i = 0; i < 3; i++) {
+                        s += "," + String(static_cast<unsigned long int>(scanner.batch[i]));
+                    }
+                    for (int i = 3; i < 5; i++) {
+                        s1 += "," + String(static_cast<unsigned long int>(scanner.batch[i]));
+                    }
+                    for (int i = 5; i < 9; i++) {
+                        s2 += "," + String(static_cast<unsigned long int>(scanner.batch[i]));
+                    }
+
+                    displayCentered(s + '\0', 3);
+                    displayCentered(s1 + '\0', 4);
+                    displayCentered(s2 + '\0', 5);
+                    break;
+                }
+                case InvalidBarCodeLenError: {
+                    displayCentered("Invalid Code Len", 0);
+                    displayCentered("RS:" + String(scanner.get()) + '\0', 1);
+                    displayCentered("RL" + String(scanner.code39ResultsLen), 3);
+                    break;
+                }
+                case BarCodeCalibrationError: {
+                    displayCentered("Scanner Calibration", 0);
+                    displayCentered("RS:" + String(scanner.get()) + '\0', 1);
+                    displayCentered("Failed", 2);
+                    displayCentered("BL:" + String(scanner.batchLen), 3);
+                    displayCentered("RL" + String(scanner.code39ResultsLen), 4);
+                    break;
+                }
+                case OutOfMemoryError: {
+                    displayCentered("RS:" + String(scanner.get()) + '\0', 0);
+                    displayCentered("Scanner Capa", 1);
+                    displayCentered("-city Overflow", 2);
+                    displayCentered("BL:" + String(scanner.batchLen), 3);
+                    displayCentered("RL" + String(scanner.code39ResultsLen), 4);
+                    break;
+                }
+                default:
+                    displayCentered("Custom" + String(scanner.getState()), 2);
+                    break;
+            }
+        }
     }
 
     buttonB.waitForButton();
 }
 
 void displayResult(Code39Results result) {
+    display.clear();
     displayCentered("Scan Success", 0);
     displayCentered("Result:", 1);
     displayCentered(String(scanner.get()), 2);
-    displayCentered(String(scanner.get()[0]),3);
-    displayCentered("Len:" + String(result.length),5);
-    displayCentered(String(scanner.getState()),6);
-}
-
-void displayError(BarCodeReaderStates state) {
-    displayCentered("Scan Failed", 0);
-    switch (state) {
-        case InvalidBarCodeError: {
-            displayCentered("Code Not Found", 1);
-            displayCentered("BL:" + String(scanner.batchLen),2);
-            displayCentered("RL" + String(scanner.code39ResultsLen),3);
-            break;
-        }
-        case InvalidBarCodeLenError: {
-            displayCentered("Invalid Code Len", 1);
-            break;
-        }
-        case BarCodeCalibrationError: {
-            displayCentered("Scanner Calibration", 1);
-            displayCentered("Failed", 2);
-            break;
-        }
-        case OutOfMemoryError: {
-            displayCentered("Scanner Capacity", 1);
-            displayCentered("Overflow", 2);
-            break;
-        }
-        default:
-            displayCentered("Custom"+String(scanner.getState()),2);
-            break;
-    }
+    displayCentered(String(scanner.get()[0]), 3);
+    displayCentered("Len:" + String(result.length), 5);
+    displayCentered(String(scanner.getState()), 6);
 }
 
 void displayCentered(const String &s, const uint8_t line) {

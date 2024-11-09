@@ -10,11 +10,6 @@
  *
  */
 #include "BarCodeReader.h"
-
-#include <Pololu3piPlus32U4Buttons.h>
-#include <Pololu3piPlus32U4Motors.h>
-#include <Pololu3piPlus32U4OLED.h>
-
 #include "BarCodeParser.h"
 #include "Sensors.h"
 
@@ -25,7 +20,7 @@ void BarCodeReader::startTracking() {
 
 void BarCodeReader::stepTracker() {
     const uint64_t t1 = millis();
-    const uint64_t td = t1 - t0;
+    const uint64_t td = t1 - this->t0;
     this->batch[batchLen] = td;
     this->batchLen += 1;
     this->t0 = t1;
@@ -109,33 +104,21 @@ void BarCodeReader::read() {
             }
 
             // parse the results
-            char result = 0; {
-                auto parseResult = BarCodeParser::processTimeArray(this->batch);
-                switch (parseResult.checkState()) {
-                    case Lab4::ResultState::None: {
-                        this->state = InvalidBarCodeError;
-                        return;
-                    }
-                    case Lab4::ResultState::Some: {
-                        result = parseResult.getValue();
-                        break;
-                    }
+            auto parseResult = BarCodeParser::processTimeArray(this->batch);
+            switch (parseResult.checkState()) {
+                case Lab4::ResultState::None: {
+                    this->state = InvalidBarCodeError;
+                    return;
+                }
+                case Lab4::ResultState::Some: {
+                    // store the result
+                    this->code39Results[this->code39ResultsLen] = parseResult.getValue();
+                    this->code39ResultsLen += 1;
+                    // next state
+                    this->state = DiscardWhite;
+                    break;
                 }
             }
-
-            // store the result
-            this->code39Results[this->code39ResultsLen] = result;
-            this->code39ResultsLen += 1;
-
-
-            this->state = BatchStart;
-
-            // discard the next token
-            // if (detectedBlack) {
-            //     this->state = DiscardBlack;
-            // } else {
-            //     this->state = DiscardWhite;
-            // }
             break;
         }
     }
@@ -170,23 +153,24 @@ Lab4::Option<Code39Results> BarCodeReader::getCode39Results() {
 void BarCodeReader::pushAction(BarCodeReaderActions action) {
     switch (action) {
         case Start: {
-            switch (this->state) {
-                case Initialized: // start fresh
-                {
-                    this->state = BatchStart;
-                    break;
-                }
-                case Success: // start a new scan
-                {
-                    this->state = BatchStart;
-                    this->code39ResultsLen = 0;
-                    break;
-                }
-                default: {
-                    // ignore
-                    break;
-                }
-            }
+            this->state = BatchStart;
+            // switch (this->state) {
+            //     case Initialized: // start fresh
+            //     {
+            //         this->state = BatchStart;
+            //         break;
+            //     }
+            //     case Success: // start a new scan
+            //     {
+            //         this->state = BatchStart;
+            //         this->code39ResultsLen = 0;
+            //         break;
+            //     }
+            //     default: {
+            //         // ignore
+            //         break;
+            //     }
+            // }
             break;
         }
 

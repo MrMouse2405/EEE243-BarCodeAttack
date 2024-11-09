@@ -126,6 +126,7 @@ void LineFollower::pushAction(const LineFollowingActions action) {
             break;
         }
         case Stop: {
+            Pololu3piPlus32U4::Motors::setSpeeds(0,0);
             switch (this->state) {
                 case Calibrating:
                 case ReachedEnd: {
@@ -133,7 +134,6 @@ void LineFollower::pushAction(const LineFollowingActions action) {
                 }
                 default: {
                     this->state = ForcedStop;
-                    Pololu3piPlus32U4::Motors::setSpeeds(0,0);
                     break;
                 }
             }

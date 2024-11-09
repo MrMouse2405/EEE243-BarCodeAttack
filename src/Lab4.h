@@ -20,7 +20,7 @@
 #define LINE_THRESHOLD 200
 
 // Maximum & Minimum speed the motors will be allowed to turn.
-#define MAX_SPEED 50
+#define MAX_SPEED 200
 #define MIN_SPEED 0
 
 // Speed the motors will run when centered on the line.
