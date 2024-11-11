@@ -55,10 +55,40 @@
  */
 
 namespace Lab4 {
+
+    typedef enum BT : char {
+        Narrow = 'N',
+        Wide   = 'W',
+        Null
+    } BarType;
+
+    typedef struct {
+        uint64_t time;
+        BarType type;
+    }Bar;
+
     typedef enum OptionType {
         Some,
         None,
     } ResultState;
+
+    typedef class {
+        Bar bars[WIDTH_CHARACTER_SIZE];
+        int nBars = 0;
+        public:
+            bool isFull() {
+                return nBars == WIDTH_CHARACTER_SIZE;
+            }
+            void addBar(Lab4::Bar *bar) {
+                if (this->isFull()) {return;}
+                this->bars[this->nBars].time = bar->time;
+                this->bars[this->nBars].type = bar->type;
+                this->nBars += 1;
+            }
+            Bar* getBars() {
+                return this->bars;
+            }
+    } Batch;
 
     template<typename T>
     class Option {

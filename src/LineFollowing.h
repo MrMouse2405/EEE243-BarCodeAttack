@@ -30,16 +30,6 @@ namespace LineFollowing
         ReachedEnd,
     } LineFollowingStates;
 
-    typedef enum LFActions
-    {
-        // calibrate the IR sensors
-        Calibrate,
-        // start the line follower algorithm
-        Start,
-        // force stop the line follow algorithm
-        Stop,
-    } LineFollowingActions;
-
     class LineFollower
     {
         // Tracks the state of Line Follower
@@ -61,7 +51,9 @@ namespace LineFollowing
          *  the algorithm
          *
          */
-        void pushAction(LFActions action);
+        void start();
+        void stop();
+        void calibrate();
         /**
          *
          *  Get the current state of algorithm

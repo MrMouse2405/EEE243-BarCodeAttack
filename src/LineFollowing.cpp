@@ -108,48 +108,43 @@ void LineFollower::follow() {
  *  the algorithm
  *
  */
-void LineFollower::pushAction(const LineFollowingActions action) {
-    switch (action) {
-        case Start: {
-            switch (this->state) {
-                case Initialized: {
-                    break;
-                }
-                case Calibrating: {
-                    break;
-                }
-                default: {
-                    this->state = Following;
-                    break;
-                }
-            }
+void LineFollower::start() {
+    switch (this->state) {
+        case Initialized: {
             break;
         }
-        case Stop: {
-            Pololu3piPlus32U4::Motors::setSpeeds(0,0);
-            switch (this->state) {
-                case Calibrating:
-                case ReachedEnd: {
-                    break;
-                }
-                default: {
-                    this->state = ForcedStop;
-                    break;
-                }
-            }
+        case Calibrating: {
             break;
         }
-        case Calibrate: {
-            switch (this->state) {
-                case Initialized:
-                case ReachedEnd: {
-                    this->state = Calibrating;
-                    break;
-                }
-                default: {
-                    break;
-                }
-            }
+        default: {
+            this->state = Following;
+            break;
+        }
+    };
+}
+
+void LineFollower::stop() {
+    Pololu3piPlus32U4::Motors::setSpeeds(0,0);
+    switch (this->state) {
+        case Calibrating:
+        case ReachedEnd: {
+            break;
+        }
+        default: {
+            this->state = ForcedStop;
+            break;
+        }
+    }
+}
+
+void LineFollower::calibrate() {
+    switch (this->state) {
+        case Initialized:
+        case ReachedEnd: {
+            this->state = Calibrating;
+            break;
+        }
+        default: {
             break;
         }
     }
