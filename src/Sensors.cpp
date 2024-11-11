@@ -1,16 +1,15 @@
+#include "Sensors.h"
+#include "Pololu3piPlus32U4.h"
+
 /**
  * Sensors
  *
  * Responsible for calibrating and obtaining
  * values from the environment via the IR sensors.
  *
- * Author: OCdt Syed
  * Date: 2024-10-31
  *
  */
-
-#include "Sensors.h"
-#include "Pololu3piPlus32U4.h"
 
 namespace Sensors {
     Pololu3piPlus32U4::LineSensors lineSensors;

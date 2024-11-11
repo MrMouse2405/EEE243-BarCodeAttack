@@ -122,7 +122,7 @@ void LineFollower::start() {
 }
 
 void LineFollower::stop() {
-    Pololu3piPlus32U4::Motors::setSpeeds(0,0);
+    Pololu3piPlus32U4::Motors::setSpeeds(0, 0);
     switch (this->state) {
         case Calibrating:
         case ReachedEnd: {

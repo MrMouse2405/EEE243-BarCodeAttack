@@ -92,7 +92,6 @@ void loop() {
 
     driver.start();
     while (driver.getState() != ReachedEnd && !resultBuffer.isFull()) {
-
         /*
 
             Collecting a batch
