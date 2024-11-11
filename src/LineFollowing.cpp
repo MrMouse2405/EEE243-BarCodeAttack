@@ -110,9 +110,7 @@ void LineFollower::follow() {
  */
 void LineFollower::start() {
     switch (this->state) {
-        case Initialized: {
-            break;
-        }
+        case Initialized:
         case Calibrating: {
             break;
         }

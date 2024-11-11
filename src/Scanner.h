@@ -3,15 +3,19 @@
 #include "Arduino.h"
 
 class Scanner {
-    public:
-        Scanner();
-        // returns a new value if a new value is detected
-        Lab4::Option<Lab4::Bar> scan();
-    private:
-        typedef enum {
-           WHITE,
-           BLACK
-        } ReadingState;
-        ReadingState state;
-        uint64_t t0;
+public:
+    Scanner();
+    Scanner(uint64_t startTime);
+
+    // returns a new value if a new value is detected
+    Lab4::Option<Lab4::Bar> scan();
+
+private:
+    typedef enum {
+        WHITE,
+        BLACK
+    } ReadingState;
+
+    ReadingState state;
+    uint64_t t0;
 };

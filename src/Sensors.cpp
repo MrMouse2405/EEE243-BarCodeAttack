@@ -37,19 +37,19 @@ void Sensors::calibrateSensors() {
 
     // turn left
     Motors::setSpeeds(CALIBRATION_SPEED, -CALIBRATION_SPEED);
-    for (int i = 0; i <= 40; i++) {
+    for (int i = 0; i <= 20; i++) {
         lineSensors.calibrate();
     }
 
     // turn all the way to the right
-    Motors::setSpeeds(-(int16_t) CALIBRATION_SPEED, CALIBRATION_SPEED);
-    for (int i = 0; i <= 80; i++) {
+    Motors::setSpeeds(-CALIBRATION_SPEED, CALIBRATION_SPEED);
+    for (int i = 0; i <= 40; i++) {
         lineSensors.calibrate();
-    };
+    }
 
     // turn back to center
     Motors::setSpeeds(CALIBRATION_SPEED, -CALIBRATION_SPEED);
-    for (int i = 0; i <= 40; i++) {
+    for (int i = 0; i <= 20; i++) {
         lineSensors.calibrate();
     }
 

@@ -7,27 +7,35 @@ Scanner::Scanner() {
     this->t0 = millis();
 }
 
+Scanner::Scanner(const uint64_t startTime) {
+    this->state = WHITE;
+    this->t0 = startTime;
+}
+
 Lab4::Option<Lab4::Bar> Scanner::scan() {
-    switch(this->state) {
+    const bool blackDetected = Sensors::isBarcodeDetected();
+    switch (this->state) {
         case WHITE: {
-            if (Sensors::isBarcodeDetected()) {
+            if (blackDetected) {
                 this->state = BLACK;
+                const uint64_t t1 = millis();
+                const uint64_t delta = t1 - t0;
+                this->t0 = t1;
+                return Lab4::Option<Lab4::Bar>({delta, Lab4::BarType::Null});
             }
-            uint64_t t1 = millis();
-            uint64_t delta = t1 - t0;
-            this->t0 = t1;
-            return Lab4::Option<Lab4::Bar>({delta,Lab4::BarType::Null});
+            break;
         }
         case BLACK: {
-            if (!Sensors::isBarcodeDetected()) {
-                this->state = BLACK;
+            if (!blackDetected) {
+                this->state = WHITE;
+                const uint64_t t1 = millis();
+                const uint64_t delta = t1 - t0;
+                this->t0 = t1;
+                return Lab4::Option<Lab4::Bar>({delta, Lab4::BarType::Null});
             }
-            uint64_t t1 = millis();
-            uint64_t delta = t1 - t0;
-            this->t0 = t1;
-            return Lab4::Option<Lab4::Bar>({delta,Lab4::BarType::Null});
+            break;
         }
     }
 
-    return Lab4::Option<Lab4::Bar>();
+    return {};
 }

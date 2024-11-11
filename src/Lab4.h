@@ -18,10 +18,10 @@
 
 // Values below this will be considered to
 // be not on black line.
-#define LINE_THRESHOLD 200
+#define LINE_THRESHOLD 250
 
 // Maximum & Minimum speed the motors will be allowed to turn.
-#define MAX_SPEED 200
+#define MAX_SPEED 50
 #define MIN_SPEED 0
 
 // Speed the motors will run when centered on the line.
@@ -56,40 +56,45 @@
  */
 
 namespace Lab4 {
-
     typedef enum BT : char {
         Narrow = 'N',
-        Wide   = 'W',
+        Wide = 'W',
         Null
     } BarType;
 
     typedef struct {
         uint64_t time;
-        BarType type;
-    }Bar;
+        mutable BarType type;
+    } Bar;
 
     typedef enum OptionType {
         Some,
         None,
     } ResultState;
 
-    typedef class {
-        Bar bars[WIDTH_CHARACTER_SIZE];
-        int nBars = 0;
-        public:
-            bool isFull() {
-                return nBars == WIDTH_CHARACTER_SIZE;
-            }
-            void addBar(const Lab4::Bar *bar) {
-                if (this->isFull()) {return;}
-                this->bars[this->nBars].time = bar->time;
-                this->bars[this->nBars].type = bar->type;
-                this->nBars += 1;
-            }
-            Bar* getBars() {
-                return this->bars;
-            }
-    } Batch;
+    template <typename T, size_t SIZE>
+    class Buffer {
+
+    public:
+        int count = 0;
+        T buffer[SIZE]{};
+
+        bool isFull() const {
+            return count == SIZE;
+        }
+
+        void add(const T *val) {
+            if (this->isFull()) { return; }
+            memcpy(&buffer[this->count], val, sizeof(T));
+            this->count += 1;
+        }
+
+        void add(const T val) {
+            if (this->isFull()) { return; }
+            this->buffer[this->count] = val;
+            this->count += 1;
+        }
+    };
 
     template<typename T>
     class Option {

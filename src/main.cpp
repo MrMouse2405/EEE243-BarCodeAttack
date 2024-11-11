@@ -3,23 +3,26 @@
 #include "LineFollowing.h"
 #include "Parser.h"
 #include "Scanner.h"
-#include "code39.h"
 
 using namespace LineFollowing;
 using namespace Pololu3piPlus32U4;
 using namespace Parser;
 
 OLED display;
-Buzzer buzzer;
 ButtonB buttonB;
 
 LineFollower driver;
-KNNParser parser;    
+KNNParser parser;
 
 void playGo();
+
 void playBeep();
-void displayCentered(const String &s, const uint8_t line);
-void calibrateRobot(LineFollower *driver, Lab4::Batch *calibrationBatch);
+
+void displayCentered(const String &s, uint8_t line);
+
+void collectCalibrationBatch();
+
+void skipAScan();
 
 void setup() {
     // init
@@ -43,8 +46,6 @@ void setup() {
         Calibrating Robot
 
         |> Calibrate IR Sensors
-        |> Collect Data for Supervised Learning (for Parser)
-    
     */
 
     displayCentered("Calibrating...", 4);
@@ -53,70 +54,135 @@ void setup() {
         driver.follow();
     }
     display.clear();
-
-    /*
-        
-        Training Data for KNN Parser Model
-        
-        |> Collect First Batch (Data Collection)
-        |> Assign HardCoded Values (Data Labelling)
-        |> Data is now ready for supervised learning.
-    
-    */
-    Lab4::Batch calibrationBatch;
-    Scanner scanner = Scanner();
-    
-    driver.start();
-    while(!calibrationBatch.isFull()) {
-        driver.follow();
-        auto scannedResult = scanner.scan();
-        switch (scannedResult.checkState()) {
-            // we found a new value
-            case Lab4::ResultState::Some: {
-                calibrationBatch.addBar(scannedResult.getPointer());
-                break;
-            }
-            // we didnt get a new value
-            case Lab4::ResultState::None: {
-                break;
-            }
-        }
-    }
-    driver.stop();
-
-    // Label the Values
-    // i.e << * >> in code39
-    char asterik_pattern[WIDTH_CHARACTER_SIZE] = {'N','W','N','N','W','N','W','N','N'};
-    auto calibrationBatchData = calibrationBatch.getBars();
-    for (int i = 0; i < WIDTH_CHARACTER_SIZE; i++) {
-        calibrationBatchData[i].type = Lab4::BarType(asterik_pattern[i]);
-    }
-
-    parser.train(&calibrationBatch);
-
-    // testing
-    String s;
-    for (int i = 0; i < WIDTH_CHARACTER_SIZE; i++) {
-        s = s + String((char)calibrationBatchData[i].type);
-    }
-
-    displayCentered(s,4);
-
-    buttonB.waitForButton();
 }
 
 
 void loop() {
+    //Ask to start
+    displayCentered("Ready", 1);
+    displayCentered("<  GO  >", 4);
+    buttonB.waitForButton();
+    display.clear();
 
-    // Ask to start
-    // displayCentered("Ready", 1);
-    // displayCentered("<  GO  >", 4);
-    // buttonB.waitForButton();
-    // display.clear();
+    displayCentered("Scanning", 4);
+    playGo();
 
-    // displayCentered("Scanning", 4);
-    // playGo();
+    /*
 
+        |> Step 1: Collect data for supervised learning
+        ... train the KNN Model
+
+        Assumption: First One is ALWAYS '*'
+
+     */
+
+    collectCalibrationBatch();
+    display.clear();
+
+    /*
+
+        |> Step 2: Parse BarCode
+
+    */
+
+    displayCentered("Scanning", 2);
+
+
+    Lab4::Buffer<char, 20> resultBuffer;
+
+    driver.start();
+    while (driver.getState() != ReachedEnd && !resultBuffer.isFull()) {
+
+        /*
+
+            Collecting a batch
+
+         */
+
+        Lab4::Buffer<Lab4::BarType,WIDTH_CHARACTER_SIZE> buffer;
+        auto scanner = Scanner();
+
+        // skip first scan (separator white space)
+        while (scanner.scan().checkState() != Lab4::ResultState::Some) {
+            if (driver.getState() == ReachedEnd) {
+                // TODO: reached end while skipping a value ERORR!!!
+                // TODO: get rid of this SHOW_RESULT, make the loops exit nicely
+                // or else greg will be mad
+                goto SHOW_RESULT;
+            }
+            driver.follow();
+        }
+
+        // collect our 9 values
+        while (!buffer.isFull()) {
+            driver.follow();
+            if (driver.getState() == ReachedEnd) {
+                // TODO: reached end while reading a batch ERROR!!!
+                // TODO: get rid of this SHOW_RESULT, make the loops exit nicely
+                // or else greg will be mad
+                goto SHOW_RESULT;
+            }
+
+            // check if we found a new value
+            Lab4::Option<Lab4::Bar> scannedResult = scanner.scan();
+            switch (scannedResult.checkState()) {
+                // we found a new value either Narrow or Wide
+                case Lab4::ResultState::Some: {
+                    Lab4::BarType result = parser.getBarType(scannedResult.getPointer());
+                    buffer.add(&result);
+                    if (result == Lab4::BarType::Wide) {
+                        // TODO: Play Music
+                        // TODO: Too many wide bars error
+                    }
+                    break;
+                }
+                case Lab4::ResultState::None: {
+                    // we didn't get a new value yet
+                    break;
+                }
+            }
+        }
+
+        /*
+
+            Decode our value
+
+         */
+        Lab4::Option<char> parsedResult = KNNParser::lex(buffer);
+        switch (parsedResult.checkState()) {
+            case Lab4::ResultState::Some: {
+                if (parsedResult.getValue() == '*') {
+                    // TODO: Implement Nice Exit, too many loops AAA
+                    // TODO: this sections sucks
+                    // TODO: this section works
+                    // TODO: 4 am coding is fun
+                    // TODO: Make this work  nicely pls
+                    driver.stop();
+                    goto SHOW_RESULT;
+                }
+                resultBuffer.add(parsedResult.getValue());
+                break;
+            }
+            case Lab4::ResultState::None: {
+                // TODO: Wrong Value Error
+                break;
+            }
+        }
+    }
+
+    if (resultBuffer.isFull()) {
+        // TODO: we read too many values,
+        // Realistically, we are never hitting the limit
+        // but the condition still exists
+    }
+
+SHOW_RESULT:
+    display.clear();
+    displayCentered("Result:", 3);
+    resultBuffer.add('\0');
+    displayCentered(String(resultBuffer.buffer), 5);
+    buttonB.waitForButton();
+    display.clear();
     // // Start Following Line, and scanning barcodes
     // driver.start();
     // // BarCodeReaderStates last = scanner.getState();
@@ -129,21 +195,95 @@ void loop() {
     // buttonB.waitForButton();
 }
 
+void skipAScan() {
+    Scanner scanner;
+    driver.start();
+    while (scanner.scan().checkState() != Lab4::ResultState::Some) {
+        driver.follow();
+    }
+}
+
+
+void collectCalibrationBatch() {
+    /*
+
+        Collecting Training Data for KNN Parser Model
+
+        |> Collect First Batch (Data Collection)
+        |> Assign HardCoded Values (Data Labelling)   // i.e << * >> in code39
+        |> Data is now ready for supervised learning.
+
+    */
+
+    // Step 1: Collect calibration data
+    char starPatternLabel[WIDTH_CHARACTER_SIZE] = {'N', 'W', 'N', 'N', 'W', 'N', 'W', 'N', 'N'};
+    Lab4::Buffer<Lab4::Bar,WIDTH_CHARACTER_SIZE> trainingBatch;
+
+    auto scanner = Scanner();
+    unsigned int count = 0;
+
+    // skip first scan
+    driver.start();
+    while (scanner.scan().checkState() != Lab4::ResultState::Some) { driver.follow(); }
+
+    // collect data
+    while (!trainingBatch.isFull()) {
+        driver.follow();
+        auto scannedResult = scanner.scan();
+        switch (scannedResult.checkState()) {
+            // we found a new value
+            case Lab4::ResultState::Some: {
+                Lab4::Bar result = scannedResult.getValue();
+                // Step 2: label the value
+                result.type = static_cast<Lab4::BarType>(starPatternLabel[count]);
+                trainingBatch.add(&result);
+                count++;
+                break;
+            }
+            // we didn't get a new value
+            case Lab4::ResultState::None: {
+                break;
+            }
+        }
+    }
+
+    // Step 3: Perform Supervised Learning
+    parser.train(&trainingBatch);
+    displayCentered("C: " + String(count), 2);
+
+    String s1, s2, s3, s4;
+    for (int i = 0; i < 3; i++) {
+        s1 += String(static_cast<unsigned long>(trainingBatch.buffer[i].time)) + String(
+            static_cast<char>(trainingBatch.buffer[i].type)) + ",";
+    }
+    for (int i = 3; i < 6; i++) {
+        s2 += String(static_cast<unsigned long>(trainingBatch.buffer[i].time)) + String(
+            static_cast<char>(trainingBatch.buffer[i].type)) + ",";
+    }
+    for (int i = 6; i < WIDTH_CHARACTER_SIZE; i++) {
+        s3 += String(static_cast<unsigned long>(trainingBatch.buffer[i].time)) + String(
+            static_cast<char>(trainingBatch.buffer[i].type)) + ",";
+    }
+    displayCentered(s1, 3);
+    displayCentered(s2, 4);
+    displayCentered(s3, 5);
+}
+
 
 void displayCentered(const String &s, const uint8_t line) {
     // 10 is half of 21 (see function setup)
-    display.gotoXY(10 - (s.length() / 2), line);
+    display.gotoXY(10 - s.length() / 2, line);
     display.print(s.c_str());
 }
 
 void playGo() {
-    buzzer.play("L16 cdegreg4");
-    while (buzzer.isPlaying()) {
+    Buzzer::play("L16 cdegreg4");
+    while (Buzzer::isPlaying()) {
     }
 }
 
 void playBeep() {
-    buzzer.play(">g32>>c32");
-    while (buzzer.isPlaying()) {
+    Buzzer::play(">g32>>c32");
+    while (Buzzer::isPlaying()) {
     }
 }

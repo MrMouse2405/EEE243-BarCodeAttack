@@ -11,10 +11,8 @@
 
 #pragma once
 
-namespace LineFollowing
-{
-    typedef enum LFStates
-    {
+namespace LineFollowing {
+    typedef enum LFStates {
         // Robot is ready for action
         Initialized,
         // Robot is calibrating IR sensors
@@ -30,10 +28,10 @@ namespace LineFollowing
         ReachedEnd,
     } LineFollowingStates;
 
-    class LineFollower
-    {
+    class LineFollower {
         // Tracks the state of Line Follower
         LineFollowingStates state = Initialized;
+
         void followLine();
 
     public:
@@ -43,6 +41,7 @@ namespace LineFollowing
          *
          */
         void follow();
+
         /**
          *
          *  Push user defined actions
@@ -52,8 +51,11 @@ namespace LineFollowing
          *
          */
         void start();
+
         void stop();
+
         void calibrate();
+
         /**
          *
          *  Get the current state of algorithm

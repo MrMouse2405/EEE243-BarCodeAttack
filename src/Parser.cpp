@@ -1,96 +1,32 @@
 #include "Parser.h"
 #include "Arduino.h"
+#include "code39.h"
 using namespace Parser;
 
-static inline int getEuclidianDistance1D(int p, int q);
-static inline void swap(struct KNNPoint* a, struct KNNPoint* b);
-static inline int partition(struct KNNPoint arr[], int low, int high);
-void quickSort(struct KNNPoint arr[], int low, int high);
-static inline Lab4::BarType classifyPointAt(Lab4::Bar* bar,int k,struct KNNPoint trainingData[WIDTH_CHARACTER_SIZE]);
-
-Lab4::BarType KNNParser::getBarType(Lab4::Bar* bar) {
-    return classifyPointAt(bar,3,this->trainingData);
-}
-
-void KNNParser::train(Lab4::Batch* calibrationBatch) {
-    Lab4::Bar * calibrationData = calibrationBatch->getBars();
-    for (int i = 0; i < WIDTH_CHARACTER_SIZE; i++) {
-       this->trainingData->klass = calibrationData[i].type;
-       this->trainingData->value = calibrationData[i].time;
-    }
-}
-
-
-// This function finds classification of bar using
-// k nearest neighbour algorithm. It assumes only two
-// groups and returns Narrow if bar belongs to group Narrow, else
-// Wide.
-static inline Lab4::BarType classifyPointAt(Lab4::Bar* bar,int k,struct KNNPoint trainingData[WIDTH_CHARACTER_SIZE]) {
-    
-    for (int i = 0; i < WIDTH_CHARACTER_SIZE; i++) {
-        trainingData->distance = getEuclidianDistance1D(trainingData->value,bar->time);
-    }
-
-    quickSort(trainingData,0,WIDTH_CHARACTER_SIZE-1);
-
-    // Now consider the first k elements and only
-    // two groups
-    int NarrowFrequency = 0;     // Frequency of group 0
-    int WideFrequency   = 0;     // Frequency of group 1
-    for (int i = 0; i < k; i++)
-    {
-        if (trainingData[i].klass == Lab4::BarType::Narrow)
-            NarrowFrequency++;
-        else if (trainingData[i].klass == Lab4::BarType::Wide)
-            WideFrequency++;
-    }
-
-    return (NarrowFrequency > WideFrequency ? Lab4::BarType::Narrow : Lab4::BarType::Wide);
-}
-
-
-static inline int getEuclidianDistance1D(int p, int q) {
-    return abs(p - q);
-}
-
-void quickSort(struct KNNPoint arr[], int low, int high) {
-    if (low < high) {
-
-        // call partition function to find Partition Index
-        int pi = partition(arr, low, high);
-
-        // Recursively call quickSort() for left and right
-        // half based on Partition Index
-        quickSort(arr, low, pi - 1);
-        quickSort(arr, pi + 1, high);
-    }
-}
-
-
-static inline void swap(struct KNNPoint* a, struct KNNPoint* b) {
-    struct KNNPoint temp = *a;
+template<typename T>
+void swap(T* a, T* b) {
+    T temp = *a;
     *a = *b;
     *b = temp;
 }
 
-static inline int partition(struct KNNPoint arr[], int low, int high) {
 
+int partition(KNNPoint arr[], int low, int high) {
     // Initialize pivot to be the first element
-    struct KNNPoint p = arr[low];
+    int p = arr[low].distance;
     int i = low;
     int j = high;
 
     while (i < j) {
-
         // Find the first element greater than
         // the pivot (from starting)
-        while (arr[i].distance <= p.distance && i <= high - 1) {
+        while (arr[i].distance <= p && i <= high - 1) {
             i++;
         }
 
         // Find the first element smaller than
         // the pivot (from last)
-        while (arr[j].distance > p.distance && j >= low + 1) {
+        while (arr[j].distance > p && j >= low + 1) {
             j--;
         }
         if (i < j) {
@@ -99,4 +35,71 @@ static inline int partition(struct KNNPoint arr[], int low, int high) {
     }
     swap(&arr[low], &arr[j]);
     return j;
+}
+
+
+void quickSort(KNNPoint arr[], int low, int high) {
+    if (low < high) {
+        // call partition function to find Partition Index
+        const int partitionIndex = partition(arr, low, high);
+
+        // Recursively call quickSort() for left and right
+        // half based on Partition Index
+        quickSort(arr, low, partitionIndex - 1);
+        quickSort(arr, partitionIndex + 1, high);
+    }
+}
+
+// This function finds classification of bar using
+// k nearest neighbour algorithm. It assumes only two
+// groups and returns Narrow if bar belongs to group Narrow, else
+// Wide.
+inline Lab4::BarType KNearestClassifier(const Lab4::Bar *bar, const int k, KNNPoint points[WIDTH_CHARACTER_SIZE]) {
+    // calculate euclidian distance
+    for (int i = 0; i < WIDTH_CHARACTER_SIZE; i++) {
+        points[i].distance = abs(
+            static_cast<int64_t>(bar->time) - static_cast<int64_t>(points[i].bar->time)
+        );
+    }
+
+    quickSort(points, 0,WIDTH_CHARACTER_SIZE - 1);
+
+    // Now consider the first k elements and only
+    // two groups
+    int NarrowFrequency = 0; // Frequency of group 0
+    int WideFrequency = 0; // Frequency of group 1
+    for (int i = 0; i < k; i++) {
+        if (points[i].bar->type == Lab4::BarType::Narrow) {
+            NarrowFrequency++;
+        } else {
+            WideFrequency++;
+        }
+    }
+
+    return NarrowFrequency > WideFrequency ? Lab4::BarType::Narrow : Lab4::BarType::Wide;
+}
+
+
+Lab4::BarType KNNParser::getBarType(const Lab4::Bar *bar) {
+    return KNearestClassifier(bar, 3, this->points);
+}
+
+
+void KNNParser::train(const Lab4::Buffer<Lab4::Bar,WIDTH_CHARACTER_SIZE> *calibrationBatch) {
+    for (int i = 0; i < WIDTH_CHARACTER_SIZE; i++) {
+        this->trainingData[i].type = calibrationBatch->buffer[i].type;
+        this->trainingData[i].time = calibrationBatch->buffer[i].time;
+        this->points[i].bar = &trainingData[i];
+    }
+}
+
+Lab4::Option<char> KNNParser::lex(const Lab4::Buffer<Lab4::BarType,WIDTH_CHARACTER_SIZE>& code) {
+    for (auto i: code39) {
+        // Set string length in code39.h is 9 excluding the first character
+        if (strncmp(reinterpret_cast<const char *>(code.buffer), i + 1, WIDTH_CHARACTER_SIZE) == 0) {
+            return Lab4::Option<char>(i[0]);
+        }
+    }
+
+    return {};
 }
