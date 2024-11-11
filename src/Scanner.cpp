@@ -8,10 +8,6 @@ Scanner::Scanner() {
 }
 
 Lab4::Option<Lab4::Bar> Scanner::scan() {
-
-    uint64_t t1;
-    uint64_t delta;
-
     switch(this->state) {
         case WHITE: {
             if (Sensors::isBarcodeDetected()) {

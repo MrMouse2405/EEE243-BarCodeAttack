@@ -8,18 +8,18 @@ static inline int partition(struct KNNPoint arr[], int low, int high);
 void quickSort(struct KNNPoint arr[], int low, int high);
 static inline Lab4::BarType classifyPointAt(Lab4::Bar* bar,int k,struct KNNPoint trainingData[WIDTH_CHARACTER_SIZE]);
 
-
 Lab4::BarType KNNParser::getBarType(Lab4::Bar* bar) {
-    classifyPointAt(bar,3,this->trainingData);
+    return classifyPointAt(bar,3,this->trainingData);
 }
 
-KNNParser::KNNParser(Lab4::Batch* calibrationBatch) {
+void KNNParser::train(Lab4::Batch* calibrationBatch) {
     Lab4::Bar * calibrationData = calibrationBatch->getBars();
     for (int i = 0; i < WIDTH_CHARACTER_SIZE; i++) {
        this->trainingData->klass = calibrationData[i].type;
        this->trainingData->value = calibrationData[i].time;
     }
 }
+
 
 // This function finds classification of bar using
 // k nearest neighbour algorithm. It assumes only two

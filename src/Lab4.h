@@ -1,4 +1,5 @@
 #pragma once
+#include <Arduino.h>
 
 // Sensor Constants
 #define NUM_SENSORS 5
@@ -79,7 +80,7 @@ namespace Lab4 {
             bool isFull() {
                 return nBars == WIDTH_CHARACTER_SIZE;
             }
-            void addBar(Lab4::Bar *bar) {
+            void addBar(const Lab4::Bar *bar) {
                 if (this->isFull()) {return;}
                 this->bars[this->nBars].time = bar->time;
                 this->bars[this->nBars].type = bar->type;
@@ -104,11 +105,11 @@ namespace Lab4 {
 
         ~Option() = default;
 
-        T getValue() const {
+        const T getValue() const {
             return value;
         }
 
-        T *getPointer() const {
+        const T *getPointer() const {
             return &value;
         }
 

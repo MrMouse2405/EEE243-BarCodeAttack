@@ -13,16 +13,13 @@ OLED display;
 Buzzer buzzer;
 ButtonB buttonB;
 
-
-// line following algorithm
 LineFollower driver;
-KNNParser parser;
-
+KNNParser parser;    
 
 void playGo();
 void playBeep();
 void displayCentered(const String &s, const uint8_t line);
-
+void calibrateRobot(LineFollower *driver, Lab4::Batch *calibrationBatch);
 
 void setup() {
     // init
@@ -40,11 +37,16 @@ void setup() {
     buttonB.waitForButton();
     display.clear();
 
+
     /*
     
-        Calibrate IR Sensors
+        Calibrating Robot
 
+        |> Calibrate IR Sensors
+        |> Collect Data for Supervised Learning (for Parser)
+    
     */
+
     displayCentered("Calibrating...", 4);
     driver.calibrate();
     while (driver.getState() == Calibrating) {
@@ -54,11 +56,11 @@ void setup() {
 
     /*
         
-        Train KNN Parser Model
+        Training Data for KNN Parser Model
         
         |> Collect First Batch (Data Collection)
         |> Assign HardCoded Values (Data Labelling)
-        |> Give it to Parser (Supervised Learning)
+        |> Data is now ready for supervised learning.
     
     */
     Lab4::Batch calibrationBatch;
@@ -76,7 +78,6 @@ void setup() {
             }
             // we didnt get a new value
             case Lab4::ResultState::None: {
-
                 break;
             }
         }
@@ -91,8 +92,7 @@ void setup() {
         calibrationBatchData[i].type = Lab4::BarType(asterik_pattern[i]);
     }
 
-    // parser is calibrated and created, ready for usage    
-    parser = KNNParser(&calibrationBatch);
+    parser.train(&calibrationBatch);
 
     // testing
     String s;
@@ -101,9 +101,13 @@ void setup() {
     }
 
     displayCentered(s,4);
+
+    buttonB.waitForButton();
 }
 
+
 void loop() {
+
     // Ask to start
     // displayCentered("Ready", 1);
     // displayCentered("<  GO  >", 4);
@@ -124,6 +128,7 @@ void loop() {
 
     // buttonB.waitForButton();
 }
+
 
 void displayCentered(const String &s, const uint8_t line) {
     // 10 is half of 21 (see function setup)

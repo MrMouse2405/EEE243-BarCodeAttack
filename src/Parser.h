@@ -12,7 +12,8 @@ namespace Parser {
     class KNNParser {
         struct KNNPoint trainingData[WIDTH_CHARACTER_SIZE];
         public:
-            KNNParser(Lab4::Batch* calibrationBatch);
+            KNNParser(){}
+            void train(Lab4::Batch* calibrationBatch);
             Lab4::BarType getBarType(Lab4::Bar* bar);
     };
 
