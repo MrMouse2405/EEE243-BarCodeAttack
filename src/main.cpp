@@ -22,7 +22,7 @@ void displayCentered(const String &s, uint8_t line);
 
 void collectCalibrationBatch();
 
-void skipAScan();
+bool skipAScan(Scanner sc, LineFollower driver);
 
 void setup() {
     // init
@@ -194,12 +194,16 @@ SHOW_RESULT:
     // buttonB.waitForButton();
 }
 
-void skipAScan() {
-    Scanner scanner;
+bool skipAScan(Scanner scanner, LineFollower driver) {
     driver.start();
     while (scanner.scan().checkState() != Lab4::ResultState::Some) {
+        if (driver.getState() == ReachedEnd) {
+            return false;
+        }
         driver.follow();
     }
+
+    return true;
 }
 
 

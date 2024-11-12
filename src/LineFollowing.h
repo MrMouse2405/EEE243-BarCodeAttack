@@ -1,3 +1,5 @@
+#pragma once
+
 /**
  * LineFollower
  *
@@ -8,8 +10,6 @@
  * Date: 2024-11-01
  *
  */
-
-#pragma once
 
 namespace LineFollowing {
     typedef enum LFStates {

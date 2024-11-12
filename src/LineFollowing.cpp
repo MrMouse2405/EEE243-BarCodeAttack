@@ -1,3 +1,7 @@
+#include <Pololu3piPlus32U4.h>
+#include "LineFollowing.h"
+#include "Sensors.h"
+
 /**
  * LineFollower
  *
@@ -8,9 +12,7 @@
  * Date: 2024-11-01
  *
  */
-#include <Pololu3piPlus32U4.h>
-#include "LineFollowing.h"
-#include "Sensors.h"
+
 
 using namespace LineFollowing;
 
