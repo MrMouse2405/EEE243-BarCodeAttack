@@ -22,16 +22,17 @@ void displayCentered(const String &s, uint8_t line);
 
 void collectCalibrationBatch();
 
-bool skipAScan(Scanner sc, LineFollower driver);
+bool skipAScan(Scanner &scanner, LineFollower &driver);
 
-void setup() {
+void setup()
+{
     // init
     display.setLayout21x8();
 
     /*
-    
+
         Welcome Screen
-    
+
     */
     displayCentered("Abdul Mannan Syed", 0);
     displayCentered("Nathan Gratton", 1);
@@ -40,9 +41,8 @@ void setup() {
     buttonB.waitForButton();
     display.clear();
 
-
     /*
-    
+
         Calibrating Robot
 
         |> Calibrate IR Sensors
@@ -50,15 +50,16 @@ void setup() {
 
     displayCentered("Calibrating...", 4);
     driver.calibrate();
-    while (driver.getState() == Calibrating) {
+    while (driver.getState() == Calibrating)
+    {
         driver.follow();
     }
     display.clear();
 }
 
-
-void loop() {
-    //Ask to start
+void loop()
+{
+    // Ask to start
     displayCentered("Ready", 1);
     displayCentered("<  GO  >", 4);
     buttonB.waitForButton();
@@ -87,23 +88,25 @@ void loop() {
 
     displayCentered("Scanning", 2);
 
-
     Lab4::Buffer<char, 20> resultBuffer;
 
     driver.start();
-    while (driver.getState() != ReachedEnd && !resultBuffer.isFull()) {
+    while (driver.getState() != ReachedEnd && !resultBuffer.isFull())
+    {
         /*
 
             Collecting a batch
 
          */
 
-        Lab4::Buffer<Lab4::BarType,WIDTH_CHARACTER_SIZE> buffer;
+        Lab4::Buffer<Lab4::BarType, WIDTH_CHARACTER_SIZE> buffer;
         auto scanner = Scanner();
 
         // skip first scan (separator white space)
-        while (scanner.scan().checkState() != Lab4::ResultState::Some) {
-            if (driver.getState() == ReachedEnd) {
+        while (scanner.scan().checkState() != Lab4::ResultState::Some)
+        {
+            if (driver.getState() == ReachedEnd)
+            {
                 // TODO: reached end while skipping a value ERORR!!!
                 // TODO: get rid of this SHOW_RESULT, make the loops exit nicely
                 // or else greg will be mad
@@ -113,9 +116,11 @@ void loop() {
         }
 
         // collect our 9 values
-        while (!buffer.isFull()) {
+        while (!buffer.isFull())
+        {
             driver.follow();
-            if (driver.getState() == ReachedEnd) {
+            if (driver.getState() == ReachedEnd)
+            {
                 // TODO: reached end while reading a batch ERROR!!!
                 // TODO: get rid of this SHOW_RESULT, make the loops exit nicely
                 // or else greg will be mad
@@ -124,21 +129,25 @@ void loop() {
 
             // check if we found a new value
             Lab4::Option<Lab4::Bar> scannedResult = scanner.scan();
-            switch (scannedResult.checkState()) {
-                // we found a new value either Narrow or Wide
-                case Lab4::ResultState::Some: {
-                    Lab4::BarType result = parser.getBarType(scannedResult.getPointer());
-                    buffer.add(&result);
-                    if (result == Lab4::BarType::Wide) {
-                        // TODO: Play Music
-                        // TODO: Too many wide bars error
-                    }
-                    break;
+            switch (scannedResult.checkState())
+            {
+            // we found a new value either Narrow or Wide
+            case Lab4::ResultState::Some:
+            {
+                Lab4::BarType result = parser.getBarType(scannedResult.getPointer());
+                buffer.add(&result);
+                if (result == Lab4::BarType::Wide)
+                {
+                    // TODO: Play Music
+                    // TODO: Too many wide bars error
                 }
-                case Lab4::ResultState::None: {
-                    // we didn't get a new value yet
-                    break;
-                }
+                break;
+            }
+            case Lab4::ResultState::None:
+            {
+                // we didn't get a new value yet
+                break;
+            }
             }
         }
 
@@ -148,28 +157,33 @@ void loop() {
 
          */
         Lab4::Option<char> parsedResult = KNNParser::lex(buffer);
-        switch (parsedResult.checkState()) {
-            case Lab4::ResultState::Some: {
-                if (parsedResult.getValue() == '*') {
-                    // TODO: Implement Nice Exit, too many loops AAA
-                    // TODO: this sections sucks
-                    // TODO: this section works
-                    // TODO: 4 am coding is fun
-                    // TODO: Make this work  nicely pls
-                    driver.stop();
-                    goto SHOW_RESULT;
-                }
-                resultBuffer.add(parsedResult.getValue());
-                break;
+        switch (parsedResult.checkState())
+        {
+        case Lab4::ResultState::Some:
+        {
+            if (parsedResult.getValue() == '*')
+            {
+                // TODO: Implement Nice Exit, too many loops AAA
+                // TODO: this sections sucks
+                // TODO: this section works
+                // TODO: 4 am coding is fun
+                // TODO: Make this work  nicely pls
+                driver.stop();
+                goto SHOW_RESULT;
             }
-            case Lab4::ResultState::None: {
-                // TODO: Wrong Value Error
-                break;
-            }
+            resultBuffer.add(parsedResult.getValue());
+            break;
+        }
+        case Lab4::ResultState::None:
+        {
+            // TODO: Wrong Value Error
+            break;
+        }
         }
     }
 
-    if (resultBuffer.isFull()) {
+    if (resultBuffer.isFull())
+    {
         // TODO: we read too many values,
         // Realistically, we are never hitting the limit
         // but the condition still exists
@@ -194,10 +208,13 @@ SHOW_RESULT:
     // buttonB.waitForButton();
 }
 
-bool skipAScan(Scanner scanner, LineFollower driver) {
+bool skipAScan(Scanner &scanner, LineFollower &driver)
+{
     driver.start();
-    while (scanner.scan().checkState() != Lab4::ResultState::Some) {
-        if (driver.getState() == ReachedEnd) {
+    while (scanner.scan().checkState() != Lab4::ResultState::Some)
+    {
+        if (driver.getState() == ReachedEnd)
+        {
             return false;
         }
         driver.follow();
@@ -206,87 +223,82 @@ bool skipAScan(Scanner scanner, LineFollower driver) {
     return true;
 }
 
+/**
+ *
+ * Collects the first set of barcode values
+ * and uses it for calibating the parser.
+ *
+ * Assumes the first set of barcode values correspond
+ * to the character '*' in code39 character specification
+ *
+ * Step:
+ *  |> Collect First Batch (Data Collection)
+ *  |> Assign HardCoded Values (Data Labelling)   // i.e << * >> in code39
+ *  |> Data is now ready for supervised learning.
+ *
+ */
 
-void collectCalibrationBatch() {
-    /*
-
-        Collecting Training Data for KNN Parser Model
-
-        |> Collect First Batch (Data Collection)
-        |> Assign HardCoded Values (Data Labelling)   // i.e << * >> in code39
-        |> Data is now ready for supervised learning.
-
-    */
+void collectCalibrationBatch()
+{
 
     // Step 1: Collect calibration data
     char starPatternLabel[WIDTH_CHARACTER_SIZE] = {'N', 'W', 'N', 'N', 'W', 'N', 'W', 'N', 'N'};
-    Lab4::Buffer<Lab4::Bar,WIDTH_CHARACTER_SIZE> trainingBatch;
+    Lab4::Buffer<Lab4::Bar, WIDTH_CHARACTER_SIZE> trainingBatch;
 
     auto scanner = Scanner();
     unsigned int count = 0;
 
     // skip first scan
-    driver.start();
-    while (scanner.scan().checkState() != Lab4::ResultState::Some) { driver.follow(); }
+    skipAScan(&scanner, &driver);
 
     // collect data
-    while (!trainingBatch.isFull()) {
+    while (!trainingBatch.isFull())
+    {
         driver.follow();
         auto scannedResult = scanner.scan();
-        switch (scannedResult.checkState()) {
-            // we found a new value
-            case Lab4::ResultState::Some: {
-                Lab4::Bar result = scannedResult.getValue();
-                // Step 2: label the value
-                result.type = static_cast<Lab4::BarType>(starPatternLabel[count]);
-                trainingBatch.add(&result);
-                count++;
-                break;
-            }
-            // we didn't get a new value
-            case Lab4::ResultState::None: {
-                break;
-            }
+        switch (scannedResult.checkState())
+        {
+        // we found a new value
+        case Lab4::ResultState::Some:
+        {
+            Lab4::Bar result = scannedResult.getValue();
+            // Step 2: label the value
+            result.type = static_cast<Lab4::BarType>(starPatternLabel[count]);
+            trainingBatch.add(&result);
+            count++;
+            break;
+        }
+        // we didn't get a new value
+        case Lab4::ResultState::None:
+        {
+            break;
+        }
         }
     }
 
     // Step 3: Perform Supervised Learning
     parser.train(&trainingBatch);
-    displayCentered("C: " + String(count), 2);
-
-    String s1, s2, s3, s4;
-    for (int i = 0; i < 3; i++) {
-        s1 += String(static_cast<unsigned long>(trainingBatch.buffer[i].time)) + String(
-            static_cast<char>(trainingBatch.buffer[i].type)) + ",";
-    }
-    for (int i = 3; i < 6; i++) {
-        s2 += String(static_cast<unsigned long>(trainingBatch.buffer[i].time)) + String(
-            static_cast<char>(trainingBatch.buffer[i].type)) + ",";
-    }
-    for (int i = 6; i < WIDTH_CHARACTER_SIZE; i++) {
-        s3 += String(static_cast<unsigned long>(trainingBatch.buffer[i].time)) + String(
-            static_cast<char>(trainingBatch.buffer[i].type)) + ",";
-    }
-    displayCentered(s1, 3);
-    displayCentered(s2, 4);
-    displayCentered(s3, 5);
 }
 
-
-void displayCentered(const String &s, const uint8_t line) {
+void displayCentered(const String &s, const uint8_t line)
+{
     // 10 is half of 21 (see function setup)
     display.gotoXY(10 - s.length() / 2, line);
     display.print(s.c_str());
 }
 
-void playGo() {
+void playGo()
+{
     Buzzer::play("L16 cdegreg4");
-    while (Buzzer::isPlaying()) {
+    while (Buzzer::isPlaying())
+    {
     }
 }
 
-void playBeep() {
+void playBeep()
+{
     Buzzer::play(">g32>>c32");
-    while (Buzzer::isPlaying()) {
+    while (Buzzer::isPlaying())
+    {
     }
 }
