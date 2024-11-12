@@ -11,7 +11,6 @@
  *
  */
 
-
 namespace Sensors {
     /*
      * Calibrates the sensors by reading values as the robot turns,
@@ -20,7 +19,6 @@ namespace Sensors {
      *
      * Takes no parameters and returns no values.
      */
-
     void calibrateSensors();
 
     /*
@@ -36,7 +34,6 @@ namespace Sensors {
      * If robot's sensors do not detect the line:
      *   Option<int16_t> will be empty.
      */
-
     Lab4::Option<int> detectLines();
 
     /*

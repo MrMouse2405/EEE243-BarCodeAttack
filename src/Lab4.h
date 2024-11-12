@@ -56,6 +56,10 @@
 // Amount of character barcode reader can store
 #define BARCODE_READER_CAPACITY 20
 
+// Code39 specification for '*'
+#define CODE39_DELIMITER '*'
+#define CODE39_DELIMITER_PATTERN {'N', 'W', 'N', 'N', 'W', 'N', 'W', 'N', 'N'}
+
 /*
  * PID Constants
  *
@@ -68,9 +72,14 @@
 
 /*
  *
- * Buzzer Constants
+ * Buzzer Notes
  *
  */
+
+#define GO_SEQUENCE "L16 cdegreg4"
+#define BEEP_SEQUENCE ">g32>>c32"
+#define HIGH_SEQUENCE "V16 O4 L16 >>c"
+#define LOW_SEQUENCE "V16 O4 L16 c"
 
 namespace Lab4 {
     // Enum representing the type of barcode: Narrow, Wide, or Null.
@@ -82,7 +91,7 @@ namespace Lab4 {
 
     // Struct representing a barcode with a timestamp and its type.
     typedef struct {
-        uint64_t time;        // Timestamp of the barcode
+        uint64_t time; // Timestamp of the barcode
         mutable BarType type; // Type of the barcode (Narrow or Wide)
     } Bar;
 
@@ -93,11 +102,11 @@ namespace Lab4 {
     } ResultState;
 
     // Template class for a fixed-size buffer to hold elements of type T.
-    template <typename T, size_t SIZE>
+    template<typename T, size_t SIZE>
     class Buffer {
     public:
-        int count = 0;       // Current number of elements in the buffer
-        T buffer[SIZE]{};    // Array to hold the elements
+        int count = 0; // Current number of elements in the buffer
+        T buffer[SIZE]{}; // Array to hold the elements
 
         // Checks if the buffer is full.
         bool isFull() const {
@@ -117,12 +126,22 @@ namespace Lab4 {
             this->buffer[this->count] = val;
             this->count += 1;
         }
+
+        // Returns the last element in the buffer
+        T getLast() {
+            return this->buffer[this->count - 1];
+        }
+
+        // Replaces the last element with a new element
+        void setLast(const T val) {
+            this->buffer[this->count - 1] = val;
+        }
     };
 
     // Template class representing an optional value of type T.
     template<typename T>
     class Option {
-        T value;                // The value, if it exists
+        T value; // The value, if it exists
         const ResultState exists; // State indicating if the value exists
 
     public:

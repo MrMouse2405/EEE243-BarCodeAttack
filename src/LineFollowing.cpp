@@ -13,7 +13,6 @@
  *
  */
 
-
 using namespace LineFollowing;
 
 /**
@@ -103,12 +102,7 @@ void LineFollower::follow() {
 }
 
 /**
- *
- *  Push user defined actions
- *
- *  i.e give commands to start / stop
- *  the algorithm
- *
+ * Starts the line following algorithm
  */
 void LineFollower::start() {
     switch (this->state) {
@@ -123,6 +117,9 @@ void LineFollower::start() {
     };
 }
 
+/**
+ * Stops the line following algorithm
+ */
 void LineFollower::stop() {
     Pololu3piPlus32U4::Motors::setSpeeds(0, 0);
     switch (this->state) {
@@ -137,6 +134,9 @@ void LineFollower::stop() {
     }
 }
 
+/**
+ * Starts the calibration algorithm
+ */
 void LineFollower::calibrate() {
     switch (this->state) {
         case Initialized:

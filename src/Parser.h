@@ -12,8 +12,7 @@
  *
  */
 
-namespace Parser
-{
+namespace Parser {
     /*
      * KNNParser
      *
@@ -23,8 +22,7 @@ namespace Parser
      * decode batches of values as code39 characters.
      */
 
-    class KNNParser
-    {
+    class KNNParser {
     public:
         /*
          * Trains the KNN model using 9 labeled barcode width values from a calibration batch.
@@ -48,8 +46,7 @@ namespace Parser
          * Structure representing a point in the KNN algorithm.
          * Contains the Euclidean distance and a pointer to the corresponding Bar.
          */
-        struct KNNPoint
-        {
+        struct KNNPoint {
             int64_t distance;
             const Lab4::Bar *bar;
         };
@@ -96,7 +93,7 @@ namespace Parser
          * This function is used in the quicksort algorithm to exchange
          * positions of elements in the array.
          */
-        template <typename T>
+        template<typename T>
         static void swap(T *a, T *b);
     };
 }

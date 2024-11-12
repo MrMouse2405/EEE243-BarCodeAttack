@@ -43,17 +43,18 @@ namespace LineFollowing {
         void follow();
 
         /**
-         *
-         *  Push user defined actions
-         *
-         *  i.e give commands to start / stop
-         *  the algorithm
-         *
+         * Starts the line following algorithm
          */
         void start();
 
+        /**
+         * Stops the line following algorithm
+        */
         void stop();
 
+        /**
+        * Starts the calibration algorithm
+        */
         void calibrate();
 
         /**

@@ -1,3 +1,20 @@
+/**
+ * EEE243 Lab 4: When BarCode Attacks
+ * Professor Greg Philips
+ *
+ * This file controls the robot's operation.
+ *
+ * The robot navigates along the center line while reading
+ * and parsing values from the IR sensor as it scans the
+ * stripes on either side. An error will be displayed if
+ * the stripes do not  conform to Code39 specifications.
+ * The robot must display result of the stripes at the end
+ * decoded according to the Code39 specification.
+ *
+ * @authors OCdt Syed, OCdt Gratton
+ * @date 2024-11-11
+ */
+
 #include "Pololu3piPlus32U4.h"
 #include "Lab4.h"
 #include "LineFollowing.h"
@@ -7,6 +24,7 @@
 using namespace LineFollowing;
 using namespace Pololu3piPlus32U4;
 using namespace Parser;
+using namespace Lab4;
 
 OLED display;
 ButtonB buttonB;
@@ -14,26 +32,22 @@ ButtonB buttonB;
 LineFollower driver;
 KNNParser parser;
 
-void playGo();
 
-void playBeep();
-
-void displayCentered(const String &s, uint8_t line);
-
-void collectCalibrationBatch();
+bool collectCalibrationBatch();
 
 bool skipAScan(Scanner &scanner, LineFollower &driver);
 
-void setup()
-{
-    // init
+void playNote(const String &sequence, bool yield = false);
+
+void displayCentered(const String &message = "EMPTY", uint8_t line = 0);
+
+void displayError(const String &message = "EMPTY");
+
+
+void setup() {
     display.setLayout21x8();
 
-    /*
-
-        Welcome Screen
-
-    */
+    // Welcome screen
     displayCentered("Abdul Mannan Syed", 0);
     displayCentered("Nathan Gratton", 1);
     displayCentered("Lab 4: Barcode", 4);
@@ -41,180 +55,124 @@ void setup()
     buttonB.waitForButton();
     display.clear();
 
-    /*
-
-        Calibrating Robot
-
-        |> Calibrate IR Sensors
-    */
-
+    // Calibrate Robot
     displayCentered("Calibrating...", 4);
     driver.calibrate();
-    while (driver.getState() == Calibrating)
-    {
+    while (driver.getState() == Calibrating) {
         driver.follow();
     }
     display.clear();
 }
 
-void loop()
-{
+void loop() {
     // Ask to start
     displayCentered("Ready", 1);
     displayCentered("<  GO  >", 4);
     buttonB.waitForButton();
     display.clear();
 
+    // Start Scanning Robot
     displayCentered("Scanning", 4);
-    playGo();
-
-    /*
-
-        |> Step 1: Collect data for supervised learning
-        ... train the KNN Model
-
-        Assumption: First One is ALWAYS '*'
-
-     */
-
-    collectCalibrationBatch();
-    display.clear();
-
-    /*
-
-        |> Step 2: Parse BarCode
-
-    */
-
-    displayCentered("Scanning", 2);
-
-    Lab4::Buffer<char, 20> resultBuffer;
-
+    playNote(GO_SEQUENCE, true);
     driver.start();
-    while (driver.getState() != ReachedEnd && !resultBuffer.isFull())
-    {
-        /*
 
-            Collecting a batch
+    // Collect first batch
+    if (!collectCalibrationBatch()) {
+        displayError("Line Too Short");
+        return;
+    }
 
-         */
+    // Parse Remaining Characters
+    Buffer<char, 20> resultBuffer;
+    while (resultBuffer.getLast() != CODE39_DELIMITER) {
+        if (resultBuffer.isFull()) {
+            displayError("Max Capacity Reached");
+            return;
+        }
 
-        Lab4::Buffer<Lab4::BarType, WIDTH_CHARACTER_SIZE> buffer;
-        auto scanner = Scanner();
+        Buffer<BarType, WIDTH_CHARACTER_SIZE> buffer;
+        Scanner scanner;
+        uint8_t wideBarCount = 0;
 
         // skip first scan (separator white space)
-        while (scanner.scan().checkState() != Lab4::ResultState::Some)
-        {
-            if (driver.getState() == ReachedEnd)
-            {
-                // TODO: reached end while skipping a value ERORR!!!
-                // TODO: get rid of this SHOW_RESULT, make the loops exit nicely
-                // or else greg will be mad
-                goto SHOW_RESULT;
-            }
-            driver.follow();
+        if (!skipAScan(scanner, driver)) {
+            // we ran off-line before we could have started a batch
+            displayError("Missing End Delimiter");
+            return;
         }
 
         // collect our 9 values
-        while (!buffer.isFull())
-        {
+        while (!buffer.isFull()) {
             driver.follow();
-            if (driver.getState() == ReachedEnd)
-            {
-                // TODO: reached end while reading a batch ERROR!!!
-                // TODO: get rid of this SHOW_RESULT, make the loops exit nicely
-                // or else greg will be mad
-                goto SHOW_RESULT;
+            if (driver.getState() == ReachedEnd) {
+                displayError("Line Too Short");
+                return;
             }
 
-            // check if we found a new value
-            Lab4::Option<Lab4::Bar> scannedResult = scanner.scan();
-            switch (scannedResult.checkState())
-            {
-            // we found a new value either Narrow or Wide
-            case Lab4::ResultState::Some:
-            {
-                Lab4::BarType result = parser.getBarType(scannedResult.getPointer());
-                buffer.add(&result);
-                if (result == Lab4::BarType::Wide)
-                {
-                    // TODO: Play Music
-                    // TODO: Too many wide bars error
+            Option<Bar> scannedResult = scanner.scan();
+            // add new value we found to buffer
+            if (scannedResult.checkState() == Some) {
+                BarType result = parser.getBarType(scannedResult.getPointer());
+                if (result == Wide) {
+                    playNote(HIGH_SEQUENCE);
+                    wideBarCount++;
+                    if (wideBarCount == 4) {
+                        displayError("Too many wide bars");
+                        return;
+                    }
                 }
+                buffer.add(&result);
+            }
+        }
+
+        // decode our buffer
+        const Option<char> parsedResult = KNNParser::lex(buffer);
+        switch (parsedResult.checkState()) {
+            case Some: {
+                // we found a value!
+                playNote(LOW_SEQUENCE);
+                resultBuffer.add(parsedResult.getValue());
                 break;
             }
-            case Lab4::ResultState::None:
-            {
-                // we didn't get a new value yet
-                break;
+            case None: {
+                displayError("Invalid Value");
+                return;
             }
-            }
-        }
-
-        /*
-
-            Decode our value
-
-         */
-        Lab4::Option<char> parsedResult = KNNParser::lex(buffer);
-        switch (parsedResult.checkState())
-        {
-        case Lab4::ResultState::Some:
-        {
-            if (parsedResult.getValue() == '*')
-            {
-                // TODO: Implement Nice Exit, too many loops AAA
-                // TODO: this sections sucks
-                // TODO: this section works
-                // TODO: 4 am coding is fun
-                // TODO: Make this work  nicely pls
-                driver.stop();
-                goto SHOW_RESULT;
-            }
-            resultBuffer.add(parsedResult.getValue());
-            break;
-        }
-        case Lab4::ResultState::None:
-        {
-            // TODO: Wrong Value Error
-            break;
-        }
         }
     }
-
-    if (resultBuffer.isFull())
-    {
-        // TODO: we read too many values,
-        // Realistically, we are never hitting the limit
-        // but the condition still exists
-    }
-
-SHOW_RESULT:
+    driver.stop();
     display.clear();
-    displayCentered("Result:", 3);
-    resultBuffer.add('\0');
-    displayCentered(String(resultBuffer.buffer), 5);
+    playNote(BEEP_SEQUENCE, true);
+    // Remove last delimiter, and make it a valid c-string
+    resultBuffer.setLast('\0');
+
+    // Display Result
+    displayCentered("Result:", 0);
+    if (resultBuffer.count == 1) {
+        displayCentered("[EMPTY]", 1);
+    } else {
+        displayCentered(String(resultBuffer.buffer), 4);
+    }
     buttonB.waitForButton();
     display.clear();
-    // // Start Following Line, and scanning barcodes
-    // driver.start();
-    // // BarCodeReaderStates last = scanner.getState();
-    // while (driver.getState() == Following) {
-    //     driver.follow();
-    // }
-    // display.clear();
-    // displayCentered("Stopped", 0);
-
-    // buttonB.waitForButton();
 }
 
-bool skipAScan(Scanner &scanner, LineFollower &driver)
-{
+/**
+ * Skips a scan value while controlling the driver.
+ *
+ * This function interacts with the scanner and driver to skip
+ * the current scanning process. It may adjust the driver's behavior
+ * accordingly.
+ *
+ * @param scanner Reference to the Scanner object.
+ * @param driver Reference to the LineFollower object.
+ * @return true if the scan was successfully skipped; false otherwise.
+ */
+bool skipAScan(Scanner &scanner, LineFollower &driver) {
     driver.start();
-    while (scanner.scan().checkState() != Lab4::ResultState::Some)
-    {
-        if (driver.getState() == ReachedEnd)
-        {
+    while (scanner.scan().checkState() != Some) {
+        if (driver.getState() == ReachedEnd) {
+            driver.stop();
             return false;
         }
         driver.follow();
@@ -224,81 +182,118 @@ bool skipAScan(Scanner &scanner, LineFollower &driver)
 }
 
 /**
+ * Collects the first set of barcode values for parser calibration.
  *
- * Collects the first set of barcode values
- * and uses it for calibating the parser.
+ * This function assumes that the initial set of barcode values corresponds
+ * to the character '*' in the Code39 character specification.
  *
- * Assumes the first set of barcode values correspond
- * to the character '*' in code39 character specification
+ * Steps:
+ *  1. Collect the first batch of barcode values (Data Collection).
+ *  2. Assign hardcoded labels (Data Labelling) to each barcode value,
+ *     associating them with the character '*'.
+ *  3. Prepare the labeled data for supervised learning.
  *
- * Step:
- *  |> Collect First Batch (Data Collection)
- *  |> Assign HardCoded Values (Data Labelling)   // i.e << * >> in code39
- *  |> Data is now ready for supervised learning.
- *
+ * @returns true if the operation succeeded; false otherwise.
  */
-
-void collectCalibrationBatch()
-{
-
-    // Step 1: Collect calibration data
-    char starPatternLabel[WIDTH_CHARACTER_SIZE] = {'N', 'W', 'N', 'N', 'W', 'N', 'W', 'N', 'N'};
-    Lab4::Buffer<Lab4::Bar, WIDTH_CHARACTER_SIZE> trainingBatch;
-
+bool collectCalibrationBatch() {
+    char starPatternLabel[WIDTH_CHARACTER_SIZE] = CODE39_DELIMITER_PATTERN;
+    Lab4::Buffer<Bar, WIDTH_CHARACTER_SIZE> trainingBatch;
     auto scanner = Scanner();
     unsigned int count = 0;
 
+    // Step 1: Collect calibration data
     // skip first scan
-    skipAScan(&scanner, &driver);
+    if (!skipAScan(scanner, driver)) {
+        return false; // Error
+    }
 
     // collect data
-    while (!trainingBatch.isFull())
-    {
+    while (!trainingBatch.isFull()) {
         driver.follow();
-        auto scannedResult = scanner.scan();
-        switch (scannedResult.checkState())
-        {
-        // we found a new value
-        case Lab4::ResultState::Some:
-        {
-            Lab4::Bar result = scannedResult.getValue();
-            // Step 2: label the value
-            result.type = static_cast<Lab4::BarType>(starPatternLabel[count]);
-            trainingBatch.add(&result);
-            count++;
-            break;
+        if (driver.getState() == ReachedEnd) {
+            return false; // Error
         }
-        // we didn't get a new value
-        case Lab4::ResultState::None:
-        {
-            break;
-        }
+
+        Option<Bar> scannedResult = scanner.scan();
+        switch (scannedResult.checkState()) {
+            // we found a new value
+            case Some: {
+                Bar result = scannedResult.getValue();
+                // Step 2: label the value
+                const auto type = static_cast<BarType>(starPatternLabel[count]);
+                result.type = type;
+                if (type == Wide) {
+                    playNote(HIGH_SEQUENCE);
+                }
+                trainingBatch.add(&result);
+                count++;
+                break;
+            }
+            // we didn't get a new value
+            case None: {
+                break;
+            }
         }
     }
 
     // Step 3: Perform Supervised Learning
     parser.train(&trainingBatch);
+    return true;
 }
 
-void displayCentered(const String &s, const uint8_t line)
-{
+/**
+ * Displays a string centered on the specified line of a display.
+ *
+ * This function takes a string and positions it in the center of a given line
+ * on the display. The string is adjusted based on the display's width to ensure
+ * that it is evenly spaced on both sides.
+ *
+ * @param message The string to be displayed.
+ * @param line The line number on which the string should be centered (0-based).
+ *             Ensure that the line number corresponds to a valid line on the display.
+ */
+void displayCentered(const String &message, const uint8_t line) {
     // 10 is half of 21 (see function setup)
-    display.gotoXY(10 - s.length() / 2, line);
-    display.print(s.c_str());
+    display.gotoXY(10 - message.length() / 2, line);
+    display.print(message.c_str());
 }
 
-void playGo()
-{
-    Buzzer::play("L16 cdegreg4");
-    while (Buzzer::isPlaying())
-    {
-    }
+/**
+ * Displays an error message on the screen.
+ *
+ * This function takes a string as an input and displays it as an error message.
+ * It may format the message with a specific prefix or styling to indicate that
+ * it is an error, ensuring that the user can easily identify it.
+ *
+ * @param message The error message to be displayed. It should provide clear information
+ *          about the nature of the error.
+ */
+void displayError(const String &message) {
+    display.clear();
+    driver.stop();
+    playNote(BEEP_SEQUENCE, true);
+    displayCentered("[ ERROR ]", 0);
+    displayCentered(message, 1);
+    buttonB.waitForButton();
+    display.clear();
 }
 
-void playBeep()
-{
-    Buzzer::play(">g32>>c32");
-    while (Buzzer::isPlaying())
-    {
+/**
+ * Plays a specified musical note sequence.
+ *
+ * This function takes a string representing a note sequence and
+ * plays it using the buzzer. It blocks execution until the note
+ * sequence has finished playing.
+ *
+ * @param sequence The note sequence to be played.
+ * @param yield The program will be yielded until buzzer has
+ *              finished playing if set to true
+ */
+void playNote(const String &sequence, const bool yield) {
+    Buzzer::stopPlaying(); // stop all previous
+    Buzzer::play(sequence.c_str());
+    if (yield) {
+        while (Buzzer::isPlaying()) {
+        }
     }
 }
